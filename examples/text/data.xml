@@ -1,0 +1,672 @@
+<magicast>
+    <name>textcast</name>
+    <debug>false</debug>
+    <node>
+        <name>node1</name>
+        <layer>
+            <name>otsikko1</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>Matkalla pohjoiseen</textValue>
+                    <scale>none</scale>
+                    <wordWrap>none</wordWrap>
+                    <verticalAlign>middle</verticalAlign>
+                    <horizontalAlign>center</horizontalAlign>
+
+
+                </parameters>
+            </asset>
+
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 2px red</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relHeight</name>
+                <value>10</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>0</value>
+            </property>
+        </layer>
+        <layer>
+        <name>junnuText</name>
+        <asset>
+            <type>component</type>
+            <value>2013/text.js</value>
+            <parameters>
+                <textValue>
+Kauheessa kiireessä Kaamasen tiellä
+Lähteellä Masa joi kauhasta
+Sillä sen täytyi taas kapseli niellä
+Kun vaivasi niin eturauhasta
+
+Matsonni lausui 'on lahonnut kölisi'
+Ikämiesryhmä tää pirssissä mölisi
+Sitten jo mentiin ja penkka vaan pölisi
+Matkalla pohjoiseen
+
+Mies kun tulee tiettyyn ikään
+Niin ei sillä pelaa mikään
+Sen näkee peilistä, on kaikki eilistä
+Jo vaan me kimpassa tuumattiin
+
+Kauheat mutkat on Kaamasen tiellä
+Paljolti liikennepainetta
+Nuorgamin Jouni kun myymässä siellä
+On kuulua potenssiainetta
+
+Numminen ajoi ja otettiin snapsia
+Harottiin otsalta harvoja hapsia
+Muisteltiin mitenkä tehty on lapsia
+Matkalla pohjoiseen
+
+Mies kun tulee tiettyyn ikään
+Niin ei sillä pelaa mikään
+Sen näkee naamasta, kun lakkaa saamasta
+Jo vain me kimpassa tuumattiin
+
+Kauhea kauppa käy Kaamasen tiellä
+Kohta on poroista puutetta
+Ellei se lääkintöhallitus kiellä
+Pois Jounilta potenssiuutetta
+
+Numminen kehui vaan kuntoa ehoa
+Sanoen 'ihme jos ei tämä tehoa'
+Sarven kun sitoi hän keskelle kehoa
+Matkalla pohjoiseen
+
+Mies kun tulee tiettyyn ikään
+Niin ei sillä pelaa mikään
+Mut näkee Masasta, on nyt niin tasasta
+Jo vain me kimpassa tuumittiin
+
+Mies kun tulee tiettyyn ikään
+No, älä ole milläsikään
+Nyt päästiin naisista, ja painajaisista
+Jo vain me kimpassa tuumattiin</textValue>
+                <wordWrap>false</wordWrap>
+                <scale>false</scale>
+
+            </parameters>
+        </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 1px red</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+        <property>
+            <name>relWidth</name>
+            <value>25</value>
+        </property>
+
+        <property>
+            <name>relHeight</name>
+            <value>90</value>
+        </property>
+
+        <property>
+            <name>relX</name>
+            <value>0</value>
+        </property>
+        <property>
+            <name>relY</name>
+            <value>100</value>
+        </property>
+        <property>
+            <name>relReferenceX</name>
+            <value>0</value>
+        </property>
+        <property>
+            <name>relReferenceY</name>
+            <value>100</value>
+        </property>
+        <property>
+            <name>alpha</name>
+            <value>100</value>
+        </property>
+        <property>
+            <name>enablePointer</name>
+            <value>false</value>
+        </property>
+    </layer>
+
+        <layer>
+            <name>otsikko2</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>Kotkan poikii ilman siipii</textValue>
+                    <scale>none</scale>
+                    <wordWrap>true</wordWrap>
+                    <verticalAlign>middle</verticalAlign>
+                    <horizontalAlign>center</horizontalAlign>
+
+                </parameters>
+            </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 2px blue</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relHeight</name>
+                <value>10</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relX</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>0</value>
+            </property>
+        </layer>
+        <layer>
+            <name>junnuText2</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>
+Rannalla istuin mä haitari soi
+Aalto löi liplattaen
+Mistä mä haaveilin muistaa en voi
+Olin vain onnellinen
+Varmaa on vain että haaveeni nuo
+Täyttyneet milloinkaan ei
+Kuinka nyt kaipaankaan ystäväin luo
+Kohtalo kauas kun vei
+
+Kotkan poikii ilman siipii
+Maailman myrskyt keinuttaa
+Taakse jäivät nuoruuspäivät
+Takaisin ei niitä saa
+Laulut tuulen nuo vain kuulen
+Enkä tiedä kauniinpaa
+
+Hiljainen haitari muistoja vain
+Pöytään soi yksinäiseen
+Muutoin en tässä mä istuisikaan
+Ellen ois muukalainen
+Ystävä seuraani hetkeksi jää
+Vaikka oot tuntematon
+Kerran mun purjeeni tummuneet nää
+Olleet myös valkeat on
+
+Kotkan poikii ilman siipii
+Maailman myrskyt keinuttaa
+Taakse jäivät nuoruuspäivät
+Takaisin ei niitä saa
+Laulut tuulen nuo vain kuulen
+Enkä tiedä kauniinpaa
+
+Ystävä kuuntele kumppaninain
+Aivan kuin mainingit sois
+Yössä kuin laivat me kohtaamme vain
+Kunnes taas liuumme pois
+Kenties mä sullekin kertoa saan
+Särkyneet toiveeni mun
+Kauaksi siivet ei kantanetkaan
+Poikasen haavoitetun
+
+Kotkan poikii ilman siipii
+Maailman myrskyt keinuttaa
+Taakse jäivät nuoruuspäivät
+Takaisin ei niitä saa
+Laulut tuulen nuo vain kuulen
+Enkä tiedä kauniinpaa</textValue>
+                    <wordWrap>true</wordWrap>
+                    <scale>none</scale>
+
+                </parameters>
+            </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 1px blue</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+
+            <property>
+                <name>relHeight</name>
+                <value>90</value>
+            </property>
+
+            <property>
+                <name>relX</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>alpha</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>enablePointer</name>
+                <value>false</value>
+            </property>
+        </layer>
+
+        <layer>
+            <name>otsikko3</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>Vanhoja poikia viiksekkäitä</textValue>
+                    <scale>both</scale>
+                    <wordWrap>false</wordWrap>
+                    <verticalAlign>middle</verticalAlign>
+                    <horizontalAlign>center</horizontalAlign>
+                </parameters>
+            </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 2px green</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relHeight</name>
+                <value>10</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relX</name>
+                <value>50</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>0</value>
+            </property>
+        </layer>
+
+        <layer>
+            <name>junnuText3</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>
+Nään vanhan Tornatorin yhä vielä mielessäin
+Kun sillä silloin matkaan lähdit lapsuusystäväin
+Niin jäI koulu kesken sulla
+Piti mun myös mukaan tulla
+Mut vanhempien käskystä mä kotirantaan jäin
+Sun lähtöäsi seurasin mä päässä laiturin
+Me viisitoista vuotiaita oltiin kumpikin
+Sinä pidit oman pääsi
+Säädit itse elämääsi
+Koit nuorena sen kaiken
+Mistä turhaan uneksin
+
+Albatrossi joka lepäämättä liitää
+Se sinun sielusi on juuri kukaties
+Taivaan sinessä sä saat vapaana sä kiitää
+Lapsuustoverini vanha merimies (merimies)
+Lapsuustoverini vanha merimies
+
+Sä Tornatorin matkassa näit Rion kuumat yöt
+Ja tutkin tarkkaan kauniit
+Honolulun kaislavyöt
+Minä jatkoin lyseossa
+Sitten kunnanvirastossa
+Ei kutsumuksen mukaan
+Satu jokaiselle työt
+Ja töiden jälkeen yhä useammin iltaisin
+Mä kapakassa istuin
+Lasin pohjaan tuijotin
+Miksen lähtenyt sun mukaan
+Mua ymmärrä ei kukaan
+Mä elämältä olin odottanut muutakin
+
+Albatrossi joka lepäämättä liitää
+Se sinun sielusi on juuri kukaties
+Taivaan sinessä saat vapaana sä kiitää
+Lapsuustoverini vanha merimies (merimies)
+Lapsuustoverini vanha merimies
+
+Sain kuulla että Tornator jo romutettu on
+Mä itse tunsin kokeneeni saman kohtalon
+Eipä ollut virkaa enää
+Tumma puna peitti nenää
+Ja rannalla mä yksin istuin nousuun Auringon
+Kun lähelleni näin mä naurulokin kaartavan
+Niin tiesin että jotakin nyt vihdoin oivallan:
+Siinä sielu on sen miehen
+Jonka työt jää puolitiehen
+Ja joka kaiken rakentaa vain varaan unelman
+
+Mut albatrossi joka lepäämättä liitää
+Se sinun sielusi on juuri kukaties
+Kerrain lailla sen saan vapaana myös kiitää
+Jos teen työni kuten vanha merimies (merimies)
+Jos teen työni kuten vanha merimies</textValue>
+                    <wordWrap>false</wordWrap>
+                    <scale>true</scale>
+                    <verticalAlign>middle</verticalAlign>
+                    <horizontalAlign>center</horizontalAlign>
+
+
+                </parameters>
+            </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 1px green</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relHeight</name>
+                <value>90</value>
+            </property>
+
+            <property>
+                <name>relX</name>
+                <value>50</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>alpha</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>enablePointer</name>
+                <value>false</value>
+            </property>
+        </layer>
+
+        <layer>
+            <name>otsikko4</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>Vanhoja poikia viiksekkäitä</textValue>
+                    <scale>both</scale>
+                    <wordWrap>true</wordWrap>
+                    <verticalAlign>middle</verticalAlign>
+                    <horizontalAlign>center</horizontalAlign>
+                </parameters>
+            </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 2px orange</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+            <property>
+                <name>relHeight</name>
+                <value>10</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relX</name>
+                <value>75</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>0</value>
+            </property>
+        </layer>
+
+        <layer>
+            <name>junnuText4</name>
+            <asset>
+                <type>component</type>
+                <value>2013/text.js</value>
+                <parameters>
+                    <textValue>
+Saimaan saaressa pikkuinen torppa,
+istuu portailla Nestori Miikkulainen.
+Huuliharppuaan soittaa, ja norppa
+nousee pinnalle pärskähtäen.
+Aallon alla se suunnisti soittajan luo,
+sille tuttua tutumpi on sävel tuo.
+Laulu kertoo näin mitä on yksin kun jää,
+hyvin hylje sen ymmärtää.
+
+Tanssittu koskaan ei Nestorin häitä,
+maailma houkutti pois morsion.
+Vanhoja poikia viiksekkäitä
+mies sekä hylje kumpikin on.
+
+Saimaan saaressa pikkuinen torppa,
+sinne elämän toveri tahtonut ei.
+Yksin Nestori jäi kuten norppa,
+myös sen kumppanin kohtalo vei.
+Suuri Saimaa mut’ sata on hylkeitä vaan,
+kohta jäljellä ei ehkä ainuttakaan.
+Huuliharppua soittelee Miikkulainen,
+yksi ymmärtää kaipuun sen.
+
+Tanssittu koskaan ei Nestorin häitä,
+maailma houkutti pois morsion.
+Vanhoja poikia viiksekkäitä
+mies sekä hylje kumpikin on.
+
+Saimaan saaressa pikkuinen torppa,
+istuu portailla Nestori Miikkulainen.
+Lepokivellään iäkäs norppa
+katsoo ystävää ymmärtäen.
+Suuri Saimaa mut naista sen rannoilta vaan
+ei näin tuuliseen saareen saa asettumaan.
+Kuten norpan, on määrä myös Miikkulaisen
+olla sukunsa viimeinen.
+
+(Tanssittu koskaan ei Nestorin häitä,
+maailma houkutti pois morsion.)
+
+Vanhoja poikia viiksekkäitä
+mies sekä hylje kumpikin on.</textValue>
+                    <wordWrap>true</wordWrap>
+                    <scale>both</scale>
+
+
+                </parameters>
+            </asset>
+            <css>
+                <style>
+                    <color>black</color>
+                    <font-family>arial</font-family>
+                    <font-size>10px</font-size>
+                    <border>solid 1px orange</border>
+                </style>
+            </css>
+            <property>
+                <name>maintainAspectRatio</name>
+                <value>min</value>
+            </property>
+            <property>
+                <name>relWidth</name>
+                <value>25</value>
+            </property>
+
+            <property>
+                <name>relHeight</name>
+                <value>90</value>
+            </property>
+
+            <property>
+                <name>relX</name>
+                <value>75</value>
+            </property>
+            <property>
+                <name>relY</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>relReferenceX</name>
+                <value>0</value>
+            </property>
+            <property>
+                <name>relReferenceY</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>alpha</name>
+                <value>100</value>
+            </property>
+            <property>
+                <name>enablePointer</name>
+                <value>false</value>
+            </property>
+        </layer>
+
+        <trigger>
+            <name>counterChange</name>
+            <immediate>false</immediate>
+            <event>
+                <layer>timer</layer>
+                <name>timerTick</name>
+            </event>
+            <action>
+                <method>setVariable</method>
+                <parameters>
+                    <name>counterVariable</name>
+                    <eventParameter>elapsedTime</eventParameter>
+                </parameters>
+            </action>
+            <action>
+                <layer>counterText</layer>
+                <method>setText</method>
+                <parameters>
+                    <variable>counterVariable</variable>
+                </parameters>
+            </action>
+
+        </trigger>
+
+    </node>
+</magicast>

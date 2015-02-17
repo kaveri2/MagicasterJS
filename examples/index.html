@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MagicastJS</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/foundation.min.css">
+    <link rel="stylesheet" href="css/style.css"/>
+  
+
+
+</head>
+<body>
+<!--div class="loader"></div>
+<div class="ghostArea"></div-->
+<!-- Header and Nav -->
+
+<div id="pageHeader" class="contain-to-grid fixed">
+    <nav class="top-bar">
+        <ul class="title-area">
+            <!-- Title Area -->
+            <li class="name">
+                <h1>
+                    <a href="#">
+                        MagicastJS
+                    </a>
+                </h1>
+            </li>
+            <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+        </ul>
+
+        <section class="top-bar-section">
+            <!-- Left Nav Section -->
+
+            <!-- Right Nav Section -->
+            <ul class="right">
+                <li class="divider"></li>
+            </ul>
+        </section>
+    </nav>
+</div>
+
+
+<!-- End Header and Nav -->
+
+<!-- First Band (Slider) -->
+
+<div class="row">
+    <div class="large-12 columns">
+        <div id="slider">
+            <img src="http://placehold.it/1000x400&text=MagicastJS" />
+        </div>
+
+        <hr />
+    </div>
+</div>
+
+<!-- Three-up Content Blocks -->
+
+<div class="row">
+    <div id="mcdemos"  class="large-4 columns">
+        <img src="http://placehold.it/400x300&text=Demos" />
+  </div>
+
+    <div id="mcdocs" class="large-4 columns">
+        <img src="http://placehold.it/400x300&text=Docs " />
+   </div>
+
+    <div id="mctests" class="large-4 columns">
+        <img src="http://placehold.it/400x300&text=Tests" />
+    </div>
+
+</div>
+
+
+<!-- Footer -->
+
+<footer class="row">
+    <div class="large-12 columns">
+        <hr />
+        <div class="row">
+            <div class="large-6 columns">
+                <p>Copyright (c) 2013-2015 Yleisradio Oy</p>
+            </div>
+            <div class="large-6 columns">
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="js/vendor/jquery.js"></script>
+<script src="js/vendor/custom.modernizr.js"></script>
+<script src="js/jquery.scrollto.js"></script>
+
+<script src="js/foundation/foundation.js"></script>
+<script src="js/foundation/foundation.alerts.js"></script>
+<script src="js/foundation/foundation.clearing.js"></script>
+<script src="js/foundation/foundation.cookie.js"></script>
+<script src="js/foundation/foundation.dropdown.js"></script>
+<script src="js/foundation/foundation.forms.js"></script>
+<script src="js/foundation/foundation.joyride.js"></script>
+<script src="js/foundation/foundation.magellan.js"></script>
+<script src="js/foundation/foundation.orbit.js"></script>
+<script src="js/foundation/foundation.placeholder.js"></script>
+<script src="js/foundation/foundation.reveal.js"></script>
+<script src="js/foundation/foundation.section.js"></script>
+<script src="js/foundation/foundation.tooltips.js"></script>
+<script src="js/foundation/foundation.topbar.js"></script>
+<script src="js/foundation/foundation.interchange.js"></script>
+<!--script src="../src/mahti.js"></script-->
+
+<script>
+    $(document).foundation();
+</script>
+<script>
+
+    $(document).ready(function() {
+        $("#mcdemos").on("click", function() {
+            window.location.href = "demos/index.php";
+        });
+
+        $("#mcdocs").on("click", function() {
+            window.location.href = "../apidoc/index.html";
+        });
+
+        $("#mctests").on("click", function() {
+            window.location.href = "index.php";
+        });
+    });
+
+    document.addEventListener("mc_mahtiInitialized", function() {
+        console.log("mahtiLoaded event");
+        //Mahti.enable_hbbtv_functionality();
+        $.scrollTo(0);
+        });
+
+    document.addEventListener("mc_allMagicastsStarted", function(e) {
+        console.log("mc_allMagicastsStarted event");
+        $.scrollTo(0);
+        $(".loader").one('webkitTransitionEnd', function(){
+            $(document.body).addClass("pageready");
+            $(".mcbackground").removeClass("mcrelative");
+            $("#pageHeader").removeClass("hidden");
+        });
+        $(".mcbackground").removeClass("mcfixed").addClass("mcrelative");
+        $(".loader").add(".ghostArea").addClass("moveup");
+
+
+        $(".chapter").on("click", function(e) {
+            $.scrollTo($(e.target).data("scrollto") + "%");
+            console.log(e);
+        })
+
+    });
+
+</script>
+</body>
+</html>

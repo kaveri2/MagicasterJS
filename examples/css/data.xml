@@ -1,0 +1,46 @@
+<magicast>
+<format>html5</format>
+<font>
+	<source>google</source>
+	<family>Droid Sans</family>
+</font>
+<cssRule>
+	<selector>.kissa</selector>
+	<declaration>border: 1px solid blue; font-family: "Droid Sans";</declaration>
+</cssRule>
+<cssRule>
+	<selector>.koira</selector>
+	<declaration>border: 1px solid orange;</declaration>
+</cssRule>
+<node>
+	<name>test</name>
+	<layer>
+		<name>test</name>
+		<asset>
+			<type>component</type>
+			<value>2013/text.js</value>
+			<parameters>
+				<textValue>
+					<type>constant</type>
+					<value>testetestesds</value>
+				</textValue>
+			</parameters>
+		</asset>
+		<css>
+			<class>kissa</class>
+			<style>color: red;</style>
+		</css>
+	</layer>
+	<trigger>
+		<immediate>true</immediate>
+		<action>
+			<wait>5</wait>
+			<method>addCssClass</method>
+			<parameters>
+				<layer>test</layer>
+				<cssClass>koira</cssClass>
+			</parameters>
+		</action>
+	</trigger>
+</node>
+</magicast>
