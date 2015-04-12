@@ -1,8 +1,8 @@
 /**
  * @preserve Copyright (c) 2013 Yleisradio (YLE)
- * (http://www.yle.fi) and MagicasterJS Contributors (1)
+ * (http://www.yle.fi) and MagicastJS Contributors (1)
  *
- * (1) MagicasterJS Contributors are listed in the AUTHORS file.
+ * (1) MagicastJS Contributors are listed in the AUTHORS file.
  *     Please extend this file, not this notice.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,13 +21,18 @@
  * Please contact us for an alternative licence
  */
 
-define(function () {
+define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
-    var method = function grantSessionAccess(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/grantSessionAccess]", params, eventArgs, magicast);
-		Magicaster.server.callMethod("Session.grantAccess", params);
-	};
+	function controlImage(parameters, eventArgs, magicast) {
+	
+		var layer = magicast.findLayerByName(parameters.layer);
+		var component = layer ? layer.getComponent() : null;
+		if (component) {
+			component.control(parameters.method, parameters.parameters);
+		}
+		
+	}
 
-    return method;
+    return controlImage;
 });

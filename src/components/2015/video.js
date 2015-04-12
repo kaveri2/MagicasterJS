@@ -30,7 +30,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		
 		var $video = $("<video style='width: 100%; height: 100%' />");
 		$video.attr({
-			src: data.asset ? layer.resolveUriFromAsset(data.asset) : "",
+			src: data.asset ? layer.resolveAndGetValue(data.asset) : "",
 			name: "video"
 		});
 		layer.getContent().append($video);
@@ -163,7 +163,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 			}
 		};
 		
-		self.action = function(method, parameters) {
+		self.control = function(method, parameters, eventArgs) {
 			switch (method) {
 				case "play":
 					play();
@@ -178,10 +178,10 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 					stop();
 					break;
 				case "seek":
-					seek(parseFloat(layer.resolveAndGetValue(parameters.timeValue)));
+					seek(parseFloat(layer.resolveAndGetValue(parameters.time, eventArgs)));
 					break;
 				case "setVolume":
-					setVolume(parseFloat(layer.resolveAndGetValue(parameters.value)));
+					setVolume(parseFloat(layer.resolveAndGetValue(parameters.value, eventArgs)));
 					break;
 			}
 		};

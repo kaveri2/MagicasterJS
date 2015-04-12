@@ -32,7 +32,7 @@ define(["jquery", "utils/utils", "utils/audioctx"], function ($, Utils, AC) {
 		var canPlay = $.Deferred();
 		
 		var $audio = $("<audio />").attr({
-			src: data.asset ? layer.resolveUriFromAsset(data.asset) : "",
+			src: data.asset ? layer.resolveAndGetValue(data.asset) : "",
 			name: "audio"
 		});
 		var audio = $audio[0];
@@ -111,7 +111,7 @@ define(["jquery", "utils/utils", "utils/audioctx"], function ($, Utils, AC) {
 			}
 		};
 		
-		self.action = function(method, parameters) {
+		self.control = function(method, parameters, eventArgs) {
 			switch (method) {
 				case "play":
 					play();
@@ -126,10 +126,10 @@ define(["jquery", "utils/utils", "utils/audioctx"], function ($, Utils, AC) {
 					stop();
 					break;
 				case "seek":
-					seek(parseFloat(layer.resolveAndGetValue(parameters.timeValue)));
+					seek(parseFloat(layer.resolveAndGetValue(parameters.time, eventArgs)));
 					break;
 				case "setVolume":
-					setVolume(parseFloat(layer.resolveAndGetValue(parameters.value)));
+					setVolume(parseFloat(layer.resolveAndGetValue(parameters.value, eventArgs)));
 					break;
 			}
 		};
@@ -151,7 +151,7 @@ define(["jquery", "utils/utils", "utils/audioctx"], function ($, Utils, AC) {
 		var ac = AC.getAudioContext();
 		if (ac.available) {
 			//play audio using web audio api instead
-			api = ac.createSound(data.asset ? layer.resolveUriFromAsset(data.asset) : "");
+			api = ac.createSound(data.asset ? layer.resolveAndGetValue(data.asset) : "");
 			api.loop(loop);
 			$(api).on("ended", function () {
 				if (api.loop()) {

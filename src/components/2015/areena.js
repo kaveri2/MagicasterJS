@@ -183,8 +183,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		};
 		*/
 		
-		self.action = function(method, parameters) {
-			Magicaster.console.log("[Areena] action", method, parameters);
+		self.control = function(method, parameters, eventArgs) {
 			switch (method) {
 				case "play":
 					manualPlay = true;
@@ -207,7 +206,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 					player.stop();
 					break;
 				case "seek":
-					player.seek(layer.resolveAndGetValue(parameters.timeValue));
+					player.seek(layer.resolveAndGetValue(parameters.time, eventArgs));
 					break;
 			}
 		};

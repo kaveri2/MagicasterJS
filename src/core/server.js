@@ -35,7 +35,11 @@ define(["jquery",
         var Server = (function () {
             /** @lends server **/
 
-            var sessionKey = sessionStorage["sessionKey"] ? sessionStorage["sessionKey"] : "";
+            var sessionKey = "";
+			try {
+				sessionKey = sessionStorage["sessionKey"] ? sessionStorage["sessionKey"] : "";
+			} catch(err) {
+			}
             var firstRequest = true;
             var sessionConfirmed = false;
 
@@ -280,7 +284,11 @@ define(["jquery",
 									*/
                                     Utils.dispatchEvent("magiacster_serverSessionCreated");
                                 }
-                                sessionKey = sessionStorage["sessionKey"] = response.sessionKey;
+								sessionKey = response.sessionKey;
+								try {
+									sessionStorage["sessionKey"] = sessionKey;
+								} catch(err) {
+								}
                             }
                             else if (!sessionConfirmed) {
 							   /**

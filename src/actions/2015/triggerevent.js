@@ -21,13 +21,14 @@
  * Please contact us for an alternative licence
  */
 
-define(function () {
+define(["utils/utils"], function (Utils) {
     "use strict";
 
-    var method = function(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/setVariable] create", params, eventArgs, magicast);
-		magicast.resolveAndSetVariable(params.variable, magicast.resolveAndGetValue(params.value, eventArgs));
+    function triggerEvent(actionParams, eventArgs, magicast) {
+        Magicaster.console.log("[actions/triggerEvent]", actionParams, eventArgs, magicast);
+		
+		magicast.resolveAndTriggerEvent(actionParams, eventArgs);
     };
 
-    return method;
+    return triggerEvent;
 });

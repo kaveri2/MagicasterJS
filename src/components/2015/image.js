@@ -39,23 +39,18 @@ define(["jquery"], function ($) {
 		$content.append($image);
 		
 		if (data.asset) {
-			$image.attr({src: layer.resolveUriFromAsset(data.asset)});
-		} else if (data.value) {
-			$image.attr({src: layer.resolveAndGetValue(data.value)});
+			$image.attr({src: layer.resolveAndGetValue(data.asset)});
+		} else if (data.data) {
+			$image.attr({src: layer.resolveAndGetValue(data.data)});
 		} else {
 			loadDeferred.resolve();
 		}
 
-		$image.get(0).onload = function (e) {
-			var el = $image[0];
-			var w = el.naturalWidth;
-			var h = el.naturalHeight;
-
+		$image.get(0).onload = function (e) {		
 			layer.setGeometry({
-				width: w,
-				height: h
+				width: $image.get(0).naturalWidth,
+				height: $image.get(0).naturalHeight
 			});
-
 			loadDeferred.resolve();
 		};
 
@@ -63,12 +58,12 @@ define(["jquery"], function ($) {
 			loadDeferred.reject();
 		};
 
-		self.action = function(method, parameters, eventArgs) {
-			if (method=="setValue") {
+		self.control = function(method, parameters, eventArgs) {
+			if (method=="setData") {
 				$image.attr({src: layer.resolveAndGetValue(parameters.value, eventArgs)});
 			}
 			if (method=="setAsset") {
-				$image.attr({src: layer.resolveUriFromAsset(parameters.value, eventArgs)});
+				$image.attr({src: layer.resolveAndGetValue(parameters.value, eventArgs)});
 			}
 		};
 		

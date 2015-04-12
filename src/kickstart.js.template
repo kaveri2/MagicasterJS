@@ -111,16 +111,7 @@
 			uri: "http://themightybullsitconsulting.com/magicaster/server/",
 			bufferTime: 0.2
 		},
-		assetResolvers: {
-			ext: function(value) {
-				return "http://themightybullsitconsulting.com/magicaster/client/ext/"  + value;
-			},
-			component: function(value) {
-				return "components/" + parseComponentName(value);
-			},
-			source: function(value) {
-				return basePath + value;
-			}
+		valueResolvers: {
 		},
 		analytics: {
 			send: function(magicast, event, label, value = undefined) {
@@ -134,27 +125,6 @@
     //
 	
 	var console = config.debug ? window.console : { log: function() {} };
-
-	function parseComponentName(fullName) {
-		if (fullName && fullName.indexOf('/') >= 0 && fullName.indexOf('.') > 0) {
-			// This assumes we are having at least one '/' -character and '.' -character
-			var path = fullName.split('/');
-			var fileName = path.pop().split('.')[0];
-			path = path.join('/');
-			return  path + '/' + fileName;
-		}
-		else {
-			if (fullName && fullName.indexOf('/') === -1 && fullName.indexOf('.') > 0) {
-				return fullName.split('.')[0];
-			}
-			else if (fullName && fullName.indexOf('/') === -1 && fullName.indexOf('.') === -1) {
-				return fullName;
-			}
-			else {
-				return null;
-			}
-		}
-	}
 	
 	// identical logic to Magicaster.loadJs
 	function loadJs(uri, callback) {

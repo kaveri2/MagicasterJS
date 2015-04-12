@@ -21,16 +21,20 @@
  * Please contact us for an alternative licence
  */
 
-define(["jquery"], function ($) {
+define(function () {
     "use strict";
 
-    var method = function (params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/sendAnalytics]", params, eventArgs, magicast);
-
-		if (Magicaster.configuration.analytics) {
-			Magicaster.configuration.analytics.send(magicast, params.event, params.label, params.value !== undefined ? parseInt(params.value) : undefined);
-		}
+    function applyCollisionDetectionGroup(params, eventArgs, magicast) {
+        Magicaster.console.log("[actions/applyCollisionDetectionGroup]", params, magicast);
+		
+		var magicasts = params.layer.magicast ? Magicaster.findMagicastsByName(params.layer.magicast) : [magicast];
+		_.each(magicasts, function(magicast) {
+			var layer = magicast.findLayerByName(params.layer.name);
+			if (layer) {
+				Magicaster.applyCdGroup(params.collisionDetectionGroup, layer);
+			}
+		});
     };
 
-    return method;
+    return applyCollisionDetectionGroup;
 });

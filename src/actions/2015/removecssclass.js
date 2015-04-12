@@ -24,27 +24,20 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-    var method = function changeProperty(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/changeProperty]", params, eventArgs, magicast);
+    function removeCssClass(params, eventArgs, magicast) {
+        Magicaster.console.log("[actions/removeCssClass]", params, eventArgs, magicast);
 
-        var magicasts = params.property.magicast ? Magicaster.findMagicastsByName(params.property.magicast) : [magicast];
+        var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [magicast];
         _.each(magicasts, function (magicast) {
-			var layers = Utils.convertToArray(params.property, "layer");
+			var layers = Utils.convertToArray(params, "layer");
             _(layers).each(function(layer){
                 var l = magicast.findLayerByName(layer);
                 if (l) {
-                    var name = params.property.name;
-                    var value = magicast.resolveAndGetValue(params.value, eventArgs);					
-                    var ease = params.ease;
-                    var time = params.time;
-                    var callback = params.completeEvent ? function () {
-                        magicast.resolveAndTriggerEvent(params.completeEvent, eventArgs);
-                    } : null;
-                    magicast.layout.changeProperty(l, name, value, ease, time, callback);
+					l.removeCssClass(params.cssClass);
                 }
             });
         });
     };
 
-    return method;
+    return removeCssClass;
 });

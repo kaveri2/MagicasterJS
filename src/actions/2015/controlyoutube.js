@@ -24,39 +24,15 @@
 define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
-	Magicaster.console.log("[Cache] loaded");
+	function controlYouTube(parameters, eventArgs, magicast) {
 	
-	function Cache(data, layer) {
-        /** @lends Example **/
-        if (!(this instanceof Cache)) {
-            throw new TypeError("Constructor cannot be called as a function.");
-        }
+		var layer = magicast.findLayerByName(parameters.layer);
+		var component = layer ? layer.getComponent() : null;
+		if (component) {
+			component.control(parameters.method, parameters.parameters);
+		}
 		
-		Magicaster.console.log("[Cache] created", data, layer);
+	}
 
-		var loadDeferred = $.Deferred();
-		
-		var assetPromises = [];
-		
-		var assets = Utils.convertToArray(params, "asset");
-		_(assets).each(function(assets) {
-			var url = layer.resolveAndGetValue(asset);
-			var assetDeferred = $.Deferred();
-			assetPromises.push(assetDeferred.promise());
-			$.get(url).always(function() {
-				assetDeferred.resolve();
-			});
-		});
-		
-		$.when.apply(window, assetPromises).then(function () {
-			loadDeferred.resolve();
-		});
-		
-		self.getLoadPromise = function() {
-			return loadDeferred.promise();
-		};
-		
-    }
-
-    return Cache;
+    return controlYouTube;
 });

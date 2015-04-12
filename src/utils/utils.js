@@ -118,6 +118,50 @@ define(["jquery", "lodash"], function ($, _) {
 
             return validatedName;
         }
+		
+		function validateCondition(operator, firstValue, secondValue) {
+            var result = false;
+            var firstValueInt, secondValueInt;
+            switch (operator) {
+            case 'eq':
+                if (firstValue != null && secondValue != null && ("" + firstValue == "" + secondValue)) {
+                    result = true;
+                }
+                break;
+            case 'ne':
+                if (firstValue != null && secondValue != null && ("" + firstValue != "" + secondValue)) {
+                    result = true;
+                }
+                break;
+            case 'gt':
+                firstValueInt = parseFloat(firstValue);
+                secondValueInt = parseFloat(secondValue);
+                if (firstValueInt > secondValueInt) {
+                    result = true;
+                }
+                break;
+            case 'lt':
+                firstValueInt = parseFloat(firstValue);
+                secondValueInt = parseFloat(secondValue);
+                if (firstValueInt < secondValueInt) {
+                    result = true;
+                }
+                break;
+            case 'isNull':
+                if (firstValue == null) {
+                    result = true;
+                }
+                break;
+            case 'isNotNull':
+                if (firstValue != null) {
+                    result = true;
+                }
+                break;
+            default:
+                break;
+            }
+            return result;
+        }		
 
         /**
          * A method used to make an element draggable, can be used on any html element or magicast layer.
@@ -449,6 +493,7 @@ define(["jquery", "lodash"], function ($, _) {
             createObjects: createObjects,
             createObject: createObject,
             validateName: validateName,
+            validateCondition: validateCondition,
             convertArrayToKeyValue: convertArrayToKeyValue,
             addDragSupport: addDragSupport,
             dispatchEvent: dispatchEvent,

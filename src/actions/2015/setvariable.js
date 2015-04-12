@@ -20,27 +20,14 @@
  * All rights reserved
  * Please contact us for an alternative licence
  */
- 
-define(["jquery"], function ($) {
+
+define(function () {
     "use strict";
 
-    var method = function captureImage(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/captureImage]", params, eventArgs, magicast);
-
-        var layer = magicast.findLayerByName(params.layer);
-        if (layer) {
-		/*
-			var root = magicast.$root;
-			require(["libs/html2canvas"], function (html2canvas) {
-				window.html2canvas(root, {
-					onrendered: function (canvas) {
-						layer.triggerEvent("captureImageReady");
-					}
-				});
-			});
-		*/
-        }
+    function setVariable(params, eventArgs, magicast) {
+        Magicaster.console.log("[actions/setVariable]", params, eventArgs, magicast);
+		magicast.resolveAndSetVariable(params.variable, magicast.resolveAndGetValue(params.value, eventArgs));
     };
 
-    return method;
+    return setVariable;
 });

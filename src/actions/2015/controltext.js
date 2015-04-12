@@ -1,8 +1,8 @@
 /**
  * @preserve Copyright (c) 2013 Yleisradio (YLE)
- * (http://www.yle.fi) and MagicasterJS Contributors (1)
+ * (http://www.yle.fi) and MagicastJS Contributors (1)
  *
- * (1) MagicasterJS Contributors are listed in the AUTHORS file.
+ * (1) MagicastJS Contributors are listed in the AUTHORS file.
  *     Please extend this file, not this notice.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,23 +21,18 @@
  * Please contact us for an alternative licence
  */
 
-define(["utils/utils"], function (Utils) {
+define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
-    var method = function addCssClass(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/setCssStyle]", params, eventArgs, magicast);
+	function controlText(parameters, eventArgs, magicast) {
+	
+		var layer = magicast.findLayerByName(parameters.layer);
+		var component = layer ? layer.getComponent() : null;
+		if (component) {
+			component.control(parameters.method, parameters.parameters);
+		}
+		
+	}
 
-        var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [magicast];
-        _.each(magicasts, function (magicast) {
-			var layers = Utils.convertToArray(params, "layer");
-            _(layers).each(function(layer){
-                var l = magicast.findLayerByName(layer);
-                if (l) {
-					l.setCssStyle(params.cssStyle);
-                }
-            });
-        });
-    };
-
-    return method;
+    return controlText;
 });

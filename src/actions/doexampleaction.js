@@ -21,42 +21,23 @@
  * Please contact us for an alternative licence
  */
 
-define(["jquery", "utils/utils"], function ($, Utils) {
+define(["jquery"], function ($) {
     "use strict";
 
-	Magicaster.console.log("[Cache] loaded");
-	
-	function Cache(data, layer) {
-        /** @lends Example **/
-        if (!(this instanceof Cache)) {
+    /**
+     * doExampleAction is an example action
+	 * @class
+	 * @name doExampleAction
+     * @param params {Object} Parameters from XML
+     * @param eventArgs {Object} Event's arguments
+     * @param magicast {Magicast} Reference to magicast object
+     */
+	function doExampleAction(params, eventArgs, magicast) {
+        /** @lends Action **/
+        if (!(this instanceof Action)) {
             throw new TypeError("Constructor cannot be called as a function.");
         }
-		
-		Magicaster.console.log("[Cache] created", data, layer);
-
-		var loadDeferred = $.Deferred();
-		
-		var assetPromises = [];
-		
-		var assets = Utils.convertToArray(params, "asset");
-		_(assets).each(function(assets) {
-			var url = layer.resolveAndGetValue(asset);
-			var assetDeferred = $.Deferred();
-			assetPromises.push(assetDeferred.promise());
-			$.get(url).always(function() {
-				assetDeferred.resolve();
-			});
-		});
-		
-		$.when.apply(window, assetPromises).then(function () {
-			loadDeferred.resolve();
-		});
-		
-		self.getLoadPromise = function() {
-			return loadDeferred.promise();
-		};
-		
     }
 
-    return Cache;
+    return doExampleAction;
 });

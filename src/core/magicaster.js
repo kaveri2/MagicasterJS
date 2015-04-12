@@ -92,29 +92,9 @@ define(["jquery",
                     "uri": "",
                     bufferTime: 100
                 },
-                assetResolvers: {
+                valueResolvers: {
                     "url": function (value) {
                         return value;
-                    },
-                    "uri": function (value) {
-                        return value;
-                    },
-                    "random": function (value) {
-                        var options = Utils.convertToArray(value, "option");
-                        var totalWeight = 0;
-                        options.forEach(function (option) {
-                            totalWeight = totalWeight + parseFloat(option.weight);
-                        });
-                        var randomWeight = Math.random() * totalWeight;
-                        var weight = 0;
-                        var index = -1;
-                        while (weight < randomWeight) {
-                            index = index + 1;
-                            weight = weight + parseFloat(options[index].weight);
-                        }
-                        if (index > -1) {
-                            return Magicaster.resolveUriFromAsset(options[index].value);
-                        }
                     }
                 },
 				analytics: {
@@ -213,8 +193,10 @@ define(["jquery",
 			
 			var lastTimeStamp = 0;
 
-            function animationFrame(timeStamp) {
+//            function animationFrame(timeStamp) {
+            function animationFrame() {
 			
+				var timeStamp = new Date().getTime();			
 				var time = lastTimeStamp ? (timeStamp - lastTimeStamp) / 1000 : 0;
 				lastTimeStamp = timeStamp;
 			
@@ -280,7 +262,8 @@ define(["jquery",
                     fpsMeter.tick();
                 }
 				
-                window.requestAnimationFrame(animationFrame);
+				setTimeout(animationFrame, 0);
+//                window.requestAnimationFrame(animationFrame);
             }
 
             function enable_hobbytv_functionality() {
@@ -730,7 +713,8 @@ define(["jquery",
                 // Process document
                 var startPromise = process();
 				startPromise.done(function () {
-                    window.requestAnimationFrame(animationFrame);
+					animationFrame();
+//                    window.requestAnimationFrame(animationFrame);
                 });
 				
                 // send the first request immediately, because it creates the sessionKey
@@ -740,7 +724,7 @@ define(["jquery",
             }
 
             function loadJs(asset, callback) {
-                var uri = Magicaster.resolveUriFromAsset(asset);
+                var uri = Magicaster.resolveAndGetValue(asset);
                 var script = document.createElement("script");
                 script.type = "text/javascript";
                 if (callback) {
@@ -763,7 +747,7 @@ define(["jquery",
             }
 
             function loadCss(asset) {
-                var uri = Magicaster.resolveUriFromAsset(asset);
+                var uri = Magicaster.resolveAndGetValue(asset);
                 var i = -1;
                 var sheets = document.getElementsByTagName("link");
                 var sheetLength = sheets.length;
@@ -843,32 +827,88 @@ define(["jquery",
                 return null;
             }
 
-            function resolveAndGetValue(component, layer, params, eventArgs) {
-                Magicaster.console.log("[Magicaster] resolveAndGetValue", component, layer, params, eventArgs);
-
-                if (params instanceof Object === true) {
+			function parseSourceName(fullName) {
+				if (fullName && fullName.indexOf('/') >= 0 && fullName.indexOf('.') > 0) {
+					// This assumes we are having at least one '/' -character and '.' -character
+					var path = fullName.split('/');
+					var fileName = path.pop().split('.')[0];
+					path = path.join('/');
+					return  path + '/' + fileName;
+				}
+				else {
+					if (fullName && fullName.indexOf('/') === -1 && fullName.indexOf('.') > 0) {
+						return fullName.split('.')[0];
+					}
+					else if (fullName && fullName.indexOf('/') === -1 && fullName.indexOf('.') === -1) {
+						return fullName;
+					}
+					else {
+						return null;
+					}
+				}
+			}
+			
+            function resolveAndGetValue(magicast, layer, params, eventArgs) {
+                Magicaster.console.log("[Magicaster] resolveAndGetValue", magicast, layer, params, eventArgs);
+				
+				if (params instanceof Object === true) {
                     if (params.type === "constant") {
                         return params.value;
+                    }
+                    if (params.type === "source") {
+                        return parseSourceName(params.value);
                     }
                     if (params.type === "eventArgument") {
                         return eventArgs ? eventArgs[params.value] : null;
                     }
                     if (params.type === "variable") {
-                        return resolveAndGetVariable(component, params.value);
+                        return resolveAndGetVariable(magicast, params.value);
                     }
                     if (params.type === "property") {
-                        return resolveAndGetProperty(component, layer, params.value);
+                        return resolveAndGetProperty(magicast, layer, params.value);
                     }
                     if (params.type === "calculation") {
                         var values = Utils.convertToArray(params.value, "value");
-						// DEPRECATED: Support old syntax
-						if (values.length==0) {
-							values = Utils.convertToArray(params.value, "argument");
+						
+						var i = 0;
+						var retVal = undefined;
+                        while (values[i]) {
+							if (i==0) {
+								retVal = Utils.calculate(params.value["function"],
+									values[0] ? Magicaster.resolveAndGetValue(magicast, layer, values[0], eventArgs) : undefined,
+									values[1] ? Magicaster.resolveAndGetValue(magicast, layer, values[1], eventArgs) : undefined
+								);
+								i = 2;
+							} else {
+								retVal = Utils.calculate(params.value["function"],
+									retVal,
+									values[i] ? Magicaster.resolveAndGetValue(magicast, layer, values[i], eventArgs) : undefined
+								);
+								i = i + 1;
+							}
 						}
-                        return Utils.calculate(params.value["function"],
-                            values[0] ? Magicaster.resolveAndGetValue(component, layer, values[0], eventArgs) : undefined,
-                            values[1] ? Magicaster.resolveAndGetValue(component, layer, values[1], eventArgs) : undefined
-                        );
+						return retVal;
+                    }
+                    if (params.type === "conditional") {
+                        var cases = Utils.convertToArray(params.value, "case");
+						var retVal = undefined;
+                        _.each(cases, function(c) {
+							var validationResult = true;
+							var conditions = Utils.convertToArray(c, "condition");
+							_.each(conditions, function (condition) {
+								var operator = condition.operator;
+								var values = Utils.convertToArray(condition, "value");
+								var firstValue = values[0] ? Magicaster.resolveAndGetValue(magicast, layer, values[0], eventArgs) : undefined;
+								var secondValue = values[1] ? Magicaster.resolveAndGetValue(magicast, layer, values[1], eventArgs) : undefined;
+								if (!Utils.validateCondition(operator, firstValue, secondValue)) {
+									validationResult = false;
+								}
+							});
+							if (validationResult && retVal === undefined) {
+								retVal =  Magicaster.resolveAndGetValue(magicast, layer, c.value, eventArgs);
+							}
+						});
+						return retVal;
                     }
                     if (params.type === "random") {
                         var options = Utils.convertToArray(params.value, "option");
@@ -884,10 +924,16 @@ define(["jquery",
                             weight = weight + parseFloat(options[index].weight);
                         }
                         if (index > -1) {
-                            return Magicaster.resolveAndGetValue(component, layer, options[index].value, eventArgs);
+                            return Magicaster.resolveAndGetValue(magicast, layer, options[index].value, eventArgs);
                         }
                     }
                 }
+				
+				var resolver = configuration.valueResolvers[params.type];
+                if (resolver) {
+                    return resolver(params.value);
+                }
+				
                 return params;
             }
 
@@ -983,45 +1029,48 @@ define(["jquery",
                     params = { "name": params };
                 }
 
-                if (params.option) {
-                    Magicaster.console.log("Deprecated syntax!", params);
-                    params = params.option;
-                }
-
                 // resolve arguments
                 var args = {};
                 Utils.convertToArray(params, "argument").forEach(function (arg) {
                     args[arg.name] = Magicaster.resolveAndGetValue(component, layer, arg.value, eventArgs);
                 });
 
-                // global level
-                if ($.trim(params.level) === "global") {
-                    return triggerGlobalEvent(params.name, args);
-                }
+				var delay = params.delay * 1000 || 0;
+				if (delay > 0) {
+					setTimeout(function () {
+						run();
+					}, delay);
+				}
+				else {
+					run();
+				}
 
-                var retVal = false;
-                var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [component];
-                _.each(magicasts, function (magicast) {
+				function run() {				
+					
+					// global level
+					if ($.trim(params.level) === "global") {
+						triggerGlobalEvent(params.name, args);
+					}
 
-                    // magicast level
-                    if ($.trim(params.level) === "magicast" || (!layer && !params.layer)) {
-                        triggerEvent(magicast, null, params.name, args);
-                        retVal = true;
-                    }
-                    // layer level
-                    else {
-                        var l = layer;
-                        if (params.layer) {
-                            l = magicast.findLayerByName(params.layer);
-                        }
-                        if (l) {
-                            triggerEvent(magicast, l, params.name, args);
-                            retVal = true;
-                        }
-                    }
-                });
+					var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [component];
+					_.each(magicasts, function (magicast) {
 
-                return retVal;
+						// magicast level
+						if ($.trim(params.level) === "magicast" || (!layer && !params.layer)) {
+							triggerEvent(magicast, null, params.name, args);
+						}
+						// layer level
+						else {
+							var l = layer;
+							if (params.layer) {
+								l = magicast.findLayerByName(params.layer);
+							}
+							if (l) {
+								triggerEvent(magicast, l, params.name, args);
+							}
+						}
+					});
+				}
             }
 
             function resolveAndBindEventListener(magicast, layer, params, callback) {
@@ -1077,22 +1126,8 @@ define(["jquery",
                 var destroyFunc = function () {
                     $(root).off(name, filter, call_the_callback);
                 };
-
-                params.destroy = destroyFunc;
-            }
-
-            function resolveUriFromAsset(asset) {
-                Magicaster.console.log("[Magicaster] resolveUriFromAsset", asset);
-                if (!asset) {
-                    return null;
-                }
-                var resolver = configuration.assetResolvers[asset.type];
-                if (resolver) {
-                    return resolver(asset.value);
-                }
-                else {
-                    return asset;
-                }
+				
+				return destroyFunc;
             }
 
             function enablePerformanceMeter() {
@@ -1135,6 +1170,7 @@ define(["jquery",
             //
             return {
                 $: $,
+				actions: [],
                 magicasts: magicasts,
                 console: console,
                 server: server,
@@ -1156,7 +1192,6 @@ define(["jquery",
                 resolveAndGetValue: resolveAndGetValue,
                 resolveAndTriggerEvent: resolveAndTriggerEvent,
                 resolveAndBindEventListener: resolveAndBindEventListener,
-                resolveUriFromAsset: resolveUriFromAsset,
                 enablePerformanceMeter: enablePerformanceMeter,
                 showStatus: showStatus,
                 hideStatus: hideStatus,

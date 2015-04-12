@@ -41,6 +41,14 @@ define(["jquery"], function ($) {
 		if (!scale || scale == "false") scale = "none";
 		var wordWrap = data.wordWrap === "true";
 		var clip = data.clip !== "false";
+
+		var color = data.color;
+		var fontFamily = data.fontFamily;
+		var fontSize = data.fontSize;
+		var align = data.align;
+		var lineHeight = data.lineHeight;
+		var letterSpacing = data.letterSpacing;
+		var decoration = data.decoration;
 		
 		$wrapper.css({
 			"width": "100%",
@@ -53,7 +61,14 @@ define(["jquery"], function ($) {
 		function setText(text) {
 			$text.css({
 				"display": "inline-block",
-				"white-space": "pre"
+				"white-space": "pre",
+				"font-family": (fontFamily ? fontFamily : "inherit"),
+				"font-size": (fontSize ? "" + fontSize + "px" : "inherit"),
+				"color": (color ? "" + color : "inherit"),
+				"line-height": (lineHeight ? "" + lineHeight : "inherit"),
+				"text-align": (align ? "" + align : "inherit"),
+				"letter-spacing": (letterSpacing ? "" + letterSpacing : "inherit"),
+				"decoration": (decoration ? "" + decoration : "inherit")
 			});
 			text = text || "";
 			text = text.toString();
@@ -67,12 +82,19 @@ define(["jquery"], function ($) {
 			nativeAspectRatio = nativeGeometry.width / nativeGeometry.height;
 			$text.css({
 				"display": "inline-block",
-				"white-space": (wordWrap ? "pre-wrap" : "pre")
+				"white-space": (wordWrap ? "pre-wrap" : "pre"),
+				"font-family": (fontFamily ? fontFamily : "inherit"),
+				"font-size": (fontSize ? "" + fontSize + "px" : "inherit"),
+				"color": (color ? "" + color : "inherit"),
+				"line-height": (lineHeight ? "" + lineHeight : "inherit"),
+				"text-align": (align ? "" + align : "inherit"),
+				"letter-spacing": (letterSpacing ? "" + letterSpacing : "inherit"),
+				"decoration": (decoration ? "" + decoration : "inherit")
 			});
 		}
 
 		self.start = function() {
-			setText(layer.resolveAndGetValue(data.textValue));
+			setText(layer.resolveAndGetValue(data.text));
 		};
 					
 		self.adjust =  function(width, height, aspectRatio) {		
@@ -116,13 +138,13 @@ define(["jquery"], function ($) {
 			var scaleX = false;
 			var scaleY = false;
 			if (scale == "both" ||
-				(scale == "up" && (width!=undefined || geometry.width < width)) ||
-				(scale == "down" && (width!=undefined || geometry.width > width))) {
+				(scale == "up" && (width!=undefined && geometry.width < width)) ||
+				(scale == "down" && (width!=undefined && geometry.width > width))) {
 				scaleX = true;
 			}
 			if (scale == "both" ||
-				(scale == "up" && (height!=undefined || geometry.height < height)) ||
-				(scale == "down" && (height!=undefined || geometry.height > height))) {
+				(scale == "up" && (height!=undefined && geometry.height < height)) ||
+				(scale == "down" && (height!=undefined && geometry.height > height))) {
 				scaleY = true;
 			}
 			
@@ -133,8 +155,10 @@ define(["jquery"], function ($) {
 			});
 		};
 
-		self.action_setText = function (parameters) {
-			setText(layer.resolveAndGetValue(parameters.value));
+		self.control = function (method, parameters, eventArgs) {
+			if (method=="setText") {
+				setText(layer.resolveAndGetValue(parameters.value, eventArgs));
+			}
 		};
 		
     }

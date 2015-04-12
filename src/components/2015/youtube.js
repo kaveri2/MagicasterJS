@@ -78,7 +78,9 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 					rel: 0,
 					showinfo: 0,
 					fs: 0,
-					iv_load_policy: 3
+					iv_load_policy: 3,
+					start: startTime,
+					end: endTime
 				},
 				events: {
 					'onReady': function(event) {
@@ -91,20 +93,32 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 						}
 						var state = event.data;
 						switch (state) {
+							case YT.PlayerState.UNSTARTED:
+								layer.triggerEvent("unstarted");
+							break;
 							case YT.PlayerState.ENDED:
-								layer.triggerEvent("complete");
+								layer.triggerEvent("ended");
 							break;
 							case YT.PlayerState.PLAYING:
-								layer.triggerEvent("play");
+								layer.triggerEvent("playing");
 							break;
 							case YT.PlayerState.PAUSED:
-								layer.triggerEvent("pause");
+								layer.triggerEvent("paused");
 							break;
 							case YT.PlayerState.BUFFERING:
+								layer.triggerEvent("buffering");
 							break;
 							case YT.PlayerState.CUED:								
+								layer.triggerEvent("cued");
 							break;
 						}
+					},
+					'onError': function(event) {
+						if (!startTriggered) {
+							startTriggered = true;
+							layer.triggerEvent("start");
+						}
+						layer.triggerEvent("error");
 					}
 				}
 			});
@@ -170,7 +184,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		};
 		
 		self.adjust = function(width, height, aspectRatio) {
-			Magicaster.console.log("[YouTube] adjust", width, height, aspectRatio);
+//			Magicaster.console.log("[YouTube] adjust", width, height, aspectRatio);
 			player.setSize(width, height);
 			layer.setGeometry({
 			    width: width,
@@ -184,8 +198,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		};
 		*/
 		
-		self.action = function(method, parameters) {
-			Magicaster.console.log("[YouTube] action", method, parameters);
+		self.control = function(method, parameters, eventArgs) {
 			switch (method) {
 				case "play":
 					manualPlay = true;
@@ -208,19 +221,19 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 					player.stopVideo();
 					break;
 				case "seek":
-					player.seekTo(layer.resolveAndGetValue(parameters.timeValue));
+					console.
+					player.seekTo(layer.resolveAndGetValue(parameters.time, eventArgs));
 					break;
 				case "setVolume":
 					break;
 			}
 		};
 
-		self.action_methodName = function(parameters, eventArgs) {
-		};
-		
 		 self.destroy = function() {
 			Magicaster.console.log("[YouTube] destroy");
+			player.stopVideo();
 			player.destroy();
+			$content.empty();
 		};
 		
     }

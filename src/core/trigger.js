@@ -21,7 +21,7 @@
  * Please contact us for an alternative licence
  */
 
-define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
+define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
     /**
@@ -29,7 +29,7 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
      * @class
      * @name Trigger
      */
-    function Trigger(data, component) {
+    function Trigger(data, magicast) {
         /** @lends Trigger **/
         if (!(this instanceof Trigger)) {
             throw new TypeError("Constructor cannot be called as a function.");
@@ -93,64 +93,53 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
             _.each(self.conditions, function (condition) {
                 var operator = condition.operator;
 				var values = Utils.convertToArray(condition, "value");
-                var firstValue = values[0] ? component.resolveAndGetValue(values[0], eventArgs) : undefined;
-                var secondValue = values[1] ? component.resolveAndGetValue(values[1], eventArgs) : undefined;
-                if (!validateCondition(operator, firstValue, secondValue)) {
+                var firstValue = values[0] ? magicast.resolveAndGetValue(values[0], eventArgs) : undefined;
+                var secondValue = values[1] ? magicast.resolveAndGetValue(values[1], eventArgs) : undefined;
+                if (!Utils.validateCondition(operator, firstValue, secondValue)) {
                     validationResult = false;
                 }
             });
             return validationResult;
         }
 
-        function validateCondition(operator, firstValue, secondValue) {
-            var result = false;
-            var firstValueInt, secondValueInt;
-            switch (operator) {
-            case 'eq':
-                if (firstValue != null && secondValue != null && ("" + firstValue == "" + secondValue)) {
-                    result = true;
-                }
-                break;
-            case 'ne':
-                if (firstValue != null && secondValue != null && ("" + firstValue != "" + secondValue)) {
-                    result = true;
-                }
-                break;
-            case 'gt':
-                firstValueInt = parseFloat(firstValue);
-                secondValueInt = parseFloat(secondValue);
-                if (firstValueInt > secondValueInt) {
-                    result = true;
-                }
-                break;
-            case 'lt':
-                firstValueInt = parseFloat(firstValue);
-                secondValueInt = parseFloat(secondValue);
-                if (firstValueInt < secondValueInt) {
-                    result = true;
-                }
-                break;
-            case 'isNull':
-                if (firstValue == null) {
-                    result = true;
-                }
-                break;
-            case 'isNotNull':
-                if (firstValue != null) {
-                    result = true;
-                }
-                break;
-            default:
-                break;
-            }
-            return result;
-        }
-
         function resolveActions() {
 			var promises = [];
 		
-            _(self.actions).each(function (action) {
-                promises.push(Action.resolveAction(action));
+            _(self.actions).each(function (data) {
+				var d = $.Deferred();
+				var url = magicast.resolveAndGetValue(data.asset);
+				if (Magicaster.actions[url] && typeof Magicaster.actions[url] === 'function') {
+					d.resolve();
+				}
+				else {
+					try {
+						require([url],
+							function (action) {
+								if (typeof action === 'function') {
+									Magicaster.console.log("[Trigger] action resolved", url, action);
+									Magicaster.actions[url] = action;
+									d.resolve();
+								}
+								else {
+									Magicaster.console.error("[Trigger] action resolve error: not a function", url, action);
+									Magicaster.actions[url] = function() {};
+									d.resolve();
+								}
+							},
+							function () {
+								Magicaster.console.error("[Trigger] action resolve error: action not found", url);
+								Magicaster.actions[url] = function() {};
+								d.resolve();
+							});
+					}
+					catch (e) {
+						Magicaster.console.error("[Trigger] action resolve error: exception", url, e);
+						Magicaster.actions[url] = function() {};
+						d.resolve();
+					}
+				}
+		
+                promises.push(d.promise());
             });
 			
             $.when.apply(window, promises).then(function () {
@@ -168,7 +157,7 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
          * XML.
          * @public
          * @method
-         * @name Trigger#execute
+         * @name Trigger#setIndex
          * @param index {Number} The "index" of trigger in the XML definition (= the order within node)
          */
         self.setIndex = function (index) {
@@ -198,10 +187,10 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
             // NOTE! Stop does not clear ongoing timers. For that purpose use destroy-method.
             Magicaster.console.log("[Trigger] stop", self);
             // Loop through each event and stop the listeners
-            _(self.events).each(function (mcEvent) {
-				if (mcEvent.destroy && typeof mcEvent.destroy === 'function') {
-					mcEvent.destroy();
-					delete mcEvent.destroy;
+            _(self.events).each(function (event) {
+				if (event.unbindEventListener && typeof event.unbindEventListener === 'function') {
+					event.unbindEventListener();
+					delete event.unbindEventListener;
 				}
             });
             started = false;
@@ -216,6 +205,15 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
          * @name Trigger#start
          */
         self.start = function () {
+		
+			// unbind and bind event listeners, to make trigger work in the correct order
+			self.stop();
+			_(self.events).each(function (event) {
+				event.unbindEventListener = magicast.resolveAndBindEventListener(event, function(eventArgs, e) {
+					self.execute(eventArgs);
+				});
+			});
+		
             // Check that no duplicate starts are done
             if (started) {
                 return;
@@ -224,17 +222,6 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
 
 			Magicaster.console.log("[Trigger] start");
 
-            if (self.events) {
-                _(self.events).each(function (mcEvent) {
-					component.resolveAndBindEventListener(mcEvent, function(eventArgs, e) {
-						// because event callbacks are not called in order, use Utils.callInOrder
-						Utils.callInOrder(e.timeStamp * 1000 + self.index, function() {
-							self.execute(eventArgs);
-						});
-					});
-                });
-            }
-			
             if (immediate) {
 				// wait for startup sequence to be finished before executing immediate actions
 				setTimeout(function() {
@@ -261,28 +248,31 @@ define(["jquery", "core/action", "utils/utils"], function ($, Action, Utils) {
 
 			Magicaster.console.log("[Trigger] execute", eventArgs);
 			
-            _(self.actions).each(function (action) {
-                var method = action.method;
-                var actionParams = action.parameters || {};
-                var layerName = action.layer || null;
+            _(self.actions).each(function (data) {
+				var url = magicast.resolveAndGetValue(data.asset);
+				var action = Magicaster.actions[url];
+				if (action) {
 				
-				// Cache Magicaster.findMagicastsByName
-                if (!action.targetMagicasts) {
-                    action.targetMagicasts = action.magicast ? Magicaster.findMagicastsByName(action.magicast) : component;
-                    action.targetMagicasts = _.flatten([action.targetMagicasts]);
-                }
+					var parameters = data.parameters || {};
+					
+					// Cache Magicaster.findMagicastsByName
+					if (!action.targetMagicasts) {
+						action.targetMagicasts = data.magicast ? Magicaster.findMagicastsByName(data.magicast) : magicast;
+						action.targetMagicasts = _.flatten([action.targetMagicasts]);
+					}
 
-                _(action.targetMagicasts).each(function (magicast) {
-                    var time = action.wait * 1000 || 0;
-                    if (time > 0) {
-                        self.timerIds.push(setTimeout(function () {
-                            Action.executeAction(method, actionParams, eventArgs, magicast, layerName);
-                        }, time));
-                    }
-                    else {
-                        Action.executeAction(method, actionParams, eventArgs, magicast, layerName);
-                    }
-                });
+					_(action.targetMagicasts).each(function (magicast) {
+						var time = data.wait * 1000 || 0;
+						if (time > 0) {
+							self.timerIds.push(setTimeout(function () {
+								action.call(null, parameters, eventArgs, magicast);
+							}, time));
+						}
+						else {
+							action.call(null, parameters, eventArgs, magicast);
+						}
+					});
+				}
             });
 		};
 

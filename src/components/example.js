@@ -128,31 +128,6 @@ define(["jquery"], function ($) {
 			Magicaster.console.log("[Component] render");
 		};
 		
-		/**
-         * A catch-all method for layer's action handling.
-         * @name Component#action
-         * @public
-         * @method
-         * @param method {String} Method name of the action
-         * @param parameters {Object} Parameters defined in the data XML
-         * @param eventArgs {Object} Arguments from the event
-         */
-		 self.action = function(method, parameters, eventArgs) {
-			Magicaster.console.log("[Component] action", method, parameters, eventArgs);		
-		};
-
-		/**
-         * Single layer action handler.
-         * @name Component#action_[methodName]
-         * @public
-         * @method
-         * @param method {String} Method name of the action
-         * @param parameters {Object} Parameters defined in the data XML
-         * @param eventArgs {Object} Arguments from the event
-         */
-		self.action_methodName = function(parameters, eventArgs) {
-		};
-		
         /**
          * Destroys the component. Called when layer is destroyed.
          * @name Component#destroy

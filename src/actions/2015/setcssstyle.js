@@ -24,11 +24,20 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-    var method = function triggerEvent(actionParams, eventArgs, magicast) {
-        Magicaster.console.log("[actions/triggerEvent]", actionParams, eventArgs, magicast);
-		
-		magicast.resolveAndTriggerEvent(actionParams, eventArgs);
+    function setCssStyle(params, eventArgs, magicast) {
+        Magicaster.console.log("[actions/setCssStyle]", params, eventArgs, magicast);
+
+        var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [magicast];
+        _.each(magicasts, function (magicast) {
+			var layers = Utils.convertToArray(params, "layer");
+            _(layers).each(function(layer){
+                var l = magicast.findLayerByName(layer);
+                if (l) {
+					l.setCssStyle(params.cssStyle);
+                }
+            });
+        });
     };
 
-    return method;
+    return setCssStyle;
 });

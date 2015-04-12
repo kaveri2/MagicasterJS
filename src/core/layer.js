@@ -71,7 +71,9 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 		 * @returns {Object}
 		 */
 		self.getComponent = function() {
-			return component;
+			if (started) {
+				return component;
+			}
 		};
 
         // Trigger public loading event start
@@ -85,8 +87,8 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
          */
         Utils.dispatchEvent("magicaster_layerLoading", {"layer": self, "name": self.name, "magicast": magicast}, magicast.$root[0]);
 
-        //just take the first asset if multiple are defińed, multiple assets are not supported
         var asset = Utils.convertToArray(data, "asset")[0];
+		var parameters = Utils.convertToArray(data, "parameters")[0];
 
         // Layer properties are defined within Magicast definition (XML) and they are not changed
         // by the layout manager/layer
@@ -121,6 +123,8 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
             absY: undefined,
             relX: undefined,
             relY: undefined,
+            selfRelX: undefined,
+            selfRelY: undefined,
             absReferenceX: undefined,
             absReferenceY: undefined,
             relReferenceX: undefined,
@@ -183,7 +187,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
         self.transforms = {};
 
         // Asynchronously loads required component JavaScript using RequireJS methods
-        function initializeComponent(asset) {
+        function initializeComponent(asset, parameters) {
 		
             Magicaster.console.log("[Layer] initializeComponent", asset);
 
@@ -193,7 +197,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
             function componentFound(Component) {
                 if (Component) {
 				
-                    component = new Component(asset.parameters, self);
+                    component = new Component(parameters, self);
 
                     // Check the component requirements
                     var requirements = component.getRequirements ? component.getRequirements() : [];
@@ -202,6 +206,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
                         if (component.getLoadPromise) {
                             Magicaster.console.log("[Layer] component load promise found", self, component);
                             component.getLoadPromise().always(function () {
+								Magicaster.console.log("[Layer] component loaded", self, component);
                                 loadDeferred.resolve();
                             }).fail(function (error) {
                                 Magicaster.console.error(error);
@@ -250,7 +255,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
              */
             function componentNotFound() {
 			
-                Magicaster.console.error("[Layer] component not found", self);
+                Magicaster.console.error("[Layer] component not found", self, url);
 				
                 component = null;
                 loadDeferred.resolve(null);
@@ -273,9 +278,9 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
             Magicaster.console.log("[Layer] resolving component", self);
 			
             // Resolve actual component and provide appropriate callbacks for success and fail cases
-            var componentUri = self.resolveUriFromAsset(asset);
-            if (componentUri) {
-                require([componentUri], componentFound, componentNotFound);
+            var url = self.resolveAndGetValue(asset);
+            if (url) {
+                require([url], componentFound, componentNotFound);
             }
         }
 
@@ -328,6 +333,8 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
             if (component && component.destroy) {
 				component.destroy();
 			}
+			
+			magicast.layout.stopAnimations(self);
 
             $content.remove();
             $container.remove();
@@ -379,6 +386,17 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
         };	
 
 		var started = false;
+		
+		/**
+		 * Returns if layer is started
+		 * @name Layer#isStarted
+		 * @public
+		 * @method
+		 */
+		self.isStarted = function() {
+			return started;
+		}
+		
 		/**
 		 * Start's the layer
 		 * @name Layer#start
@@ -409,17 +427,6 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 			Utils.dispatchEvent("magicaster_layerStarted", {"layer": self, "magicast": magicast}, magicast.$root[0]);
         };
 
-		/**
-		 * Method for getting uri from XML-based asset definition
-		 * @name Layer#resolveUriFromAsset
-		 * @public
-		 * @method
-		 * @param asset {object} Asset definition
-		 * @returns {string}
-		 */
-        self.resolveUriFromAsset = function (asset) {
-            return Magicaster.resolveUriFromAsset(asset);
-        };
 		/**
 		 * Method for getting value from XML-based value syntax
 		 * @name Layer#resolveAndGetValue
@@ -561,7 +568,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 
 		// Initialize layer asset (creates component)
 		if (asset) {
-			initializeComponent(asset);
+			initializeComponent(asset, parameters);
 		} else {
 			loadDeferred.resolve();
 		}

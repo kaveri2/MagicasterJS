@@ -309,6 +309,17 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             // Stored only to avoid duplicate overlapping animations.
             layer.animations[property] = anim;
         };
+		
+		self.stopAnimations = function (layer) {
+			if (layer.animations) {
+				_.each(layer.animations, function(property, anim) {
+					if (anim && anim.stop) {
+						anim.stop();
+					}
+				});
+				self.animations = null;
+			}
+		};
 
         /**
          * Calculates the layer's properties, should be done every time a property changes
@@ -323,7 +334,7 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 
             // If there is no viewport defined, use magicast's container for calculating the geometry
             // When viewport is defined, only viewport layer uses magicast's container as source for calculations.
-            var $lcp = viewport && (viewport !== layer) ? viewport.getClipper() : magicast.$root.parent();
+            var $lcp = viewport && (viewport !== layer) ? viewport.getClipper() : magicast.$root;
 
             layer.parentWidth = $lcp[0].clientWidth;
             layer.parentHeight = $lcp[0].clientHeight;
@@ -375,14 +386,6 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 					// and change the geometry in doing so
 					layer.getComponent().adjust(w, h, layerProperties.aspectRatio);
 				}
-			}
-			// if component is not ready, use parent geometry
-			else {
-				// TODO: makes dirty, should not...
-				layer.setGeometry({
-					width: layer.parentWidth,
-					height: layer.parentHeight
-				});
 			}
 			
 			var geometry = layer.getGeometry();
@@ -441,6 +444,10 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
                 tmp = tmp || 0;
                 tmp = tmp + parseFloat(layerProperties.absX);
             }
+            if (layerProperties.selfRelX !== undefined) {
+                tmp = tmp || 0;
+                tmp = tmp + parseFloat(layerProperties.selfRelX / 100 * w);
+            }
             if (layerProperties.dragX !== undefined) {
                 tmp = tmp || 0;
                 tmp = tmp + parseFloat(layerProperties.dragX);
@@ -468,6 +475,10 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             if (layerProperties.absY !== undefined) {
                 tmp = tmp || 0;
                 tmp += parseFloat(layerProperties.absY);
+            }
+            if (layerProperties.selfRelY !== undefined) {
+                tmp = tmp || 0;
+                tmp = tmp + parseFloat(layerProperties.selfRelY / 100 * w);
             }
             if (layerProperties.dragY !== undefined) {
                 tmp = tmp || 0;
@@ -587,8 +598,6 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
         }
 
         function updateDimensions() {
-            var container = magicast.$root.parent();
-
             var vp = viewport && viewport.getCalculations();
             if (vp) {
                 var dims = {};
@@ -701,8 +710,8 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             }
 			
             var clipDimensions = {
-				width: magicast.$root.parent().width() + "px",
-				height: magicast.$root.parent().height() + "px"
+				width: magicast.$root.width() + "px",
+				height: magicast.$root.height() + "px"
 			};
 
             // 1st check the viewport layer if defined and resize that

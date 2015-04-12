@@ -21,22 +21,22 @@
  * Please contact us for an alternative licence
  */
 
-define(["jquery"], function ($) {
+define(function () {
     "use strict";
 
-    var method = function changeNode(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/changeNode]", params, eventArgs, magicast);
-
-		var name = "";
-		if (params.option) {
-			Magicaster.console.log("Deprecated syntax!", params);
-			name = params.option.name;
-		} else {
-			name = magicast.resolveAndGetValue(params.value, eventArgs);
+    function requestFullScreen(params, eventArgs, magicast) {
+        Magicaster.console.log("[actions/requestFullScreen]", params, eventArgs, magicast);
+		var el = magicast.$root.get(0);
+		if (el.webkitRequestFullscreen) {
+			el.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+		} else if (el.mozRequestFullScreen) {
+			el.mozRequestFullScreen();
+		} else if (el.msRequestFullscreen) {
+			el.msRequestFullscreen();
+		} else if (el.requestFullscreen) {
+			el.requestFullscreen();
 		}
-
-		magicast.changeNode(name);
     };
 
-    return method;
+    return requestFullScreen;
 });

@@ -27,9 +27,8 @@ define(["jquery",
         "core/layer",
         "core/trigger",
         "core/layout",
-        "core/capabilities",
-        "core/action"],
-    function ($, Utils, Node, Layer, Trigger, Layout, Capabilities, Action) {
+        "core/capabilities"],
+    function ($, Utils, Node, Layer, Trigger, Layout, Capabilities) {
 
         "use strict";
 
@@ -99,7 +98,7 @@ define(["jquery",
 			self.getLayers = function() {
 				return layers;
 			};
-			var oldLayers = [];
+			var oldLayers = null;
 
             var triggers = [];
 			self.getTriggers = function() {
@@ -343,6 +342,15 @@ define(["jquery",
                     }
                 });
 
+				// add new layers to DOM
+				_(newLayers).each(function (layer) {
+					var $clipper = layer.getClipper();
+					if (!$.contains(self.$viewport.get(0), $clipper.get(0))) {
+						self.$viewport.append($clipper);
+						$clipper.hide();
+					}
+				});
+				
 				oldLayers = layers;
                 layers = newLayers;
             };
@@ -413,9 +421,6 @@ define(["jquery",
                 return value;
             };
 
-            self.resolveUriFromAsset = function (asset) {
-                return Magicaster.resolveUriFromAsset(asset);
-            };
             self.resolveAndGetValue = function (params, eventArgs) {
                 return Magicaster.resolveAndGetValue(self, null, params, eventArgs);
             };
@@ -457,16 +462,7 @@ define(["jquery",
                     showStatus('changingNode');
 
                     currentNode = node;
-					
-					// add layers to DOM
-					_(layers).each(function (layer) {
-						var $clipper = layer.getClipper();
-						if (!$.contains(self.$viewport.get(0), $clipper.get(0))) {
-							self.$viewport.append($clipper);
-							$clipper.hide();
-						}
-					});
-										
+															
                     node.getLoadPromise().done(function () {
                         hideStatus('changingNode').done(function () {
 						
@@ -474,11 +470,13 @@ define(["jquery",
 							_(oldLayers).each(function(layer) {
 								layer.destroy();
 							});
+							oldLayers = null;
 
 							// remove old triggers
 							_(oldTriggers).each(function (trigger) {
 								trigger.destroy();
 							});
+							oldTriggers = null;
 
 							// make layers visible and sort by z-index
 							var i = 0;
@@ -591,20 +589,6 @@ define(["jquery",
             };
 
             /**
-             * Public interface to manually execute actions
-             * @public
-             * @function
-             * @name Magicast#executeAction
-             * @param actionName Name of the action
-             * @param params Action parameters object
-             * @param layer Name of the layer (if layer action)
-             * @returns {*}
-             */
-            self.executeAction = function (actionName, params, layer) {
-                return Action.executeAction(actionName, params, self.name, layer);
-            };
-
-            /**
              * Getter for Magicast initialize -promise
              * @public
              * @function
@@ -633,8 +617,8 @@ define(["jquery",
              * @name Magicast#tick
              */
 			self.tick = function(time) {
-				_(layers).each(function (layer) {
-					if (layer.getComponent() && layer.getComponent().tick) {
+				_(oldLayers || layers).each(function (layer) {
+					if (layer && layer.getComponent() && layer.getComponent().tick) {
 						layer.getComponent().tick(time);
 					}
 				});
