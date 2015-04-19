@@ -24,8 +24,8 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-    function removeCssClass(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/removeCssClass]", params, eventArgs, magicast);
+    function removeCssClass(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/removeCssClass]", magicast, params, eventArgs);
 
         var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [magicast];
         _.each(magicasts, function (magicast) {

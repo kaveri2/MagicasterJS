@@ -2,3 +2,16 @@ node_modules/
 material/
 apidoc/
 scripts/apidoc_tutorials/jsdoc/
+src/kickstart.js
+src/kickstart-dev.js
+
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+[Tt]humbs.db

@@ -24,8 +24,8 @@
 define(function () {
     "use strict";
 
-    function requestFullScreen(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/requestFullScreen]", params, eventArgs, magicast);
+    function requestFullScreen(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/requestFullScreen]", magicast, params, eventArgs);
 		var el = magicast.$root.get(0);
 		if (el.webkitRequestFullscreen) {
 			el.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);

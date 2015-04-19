@@ -41,32 +41,9 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		
         var self = this;
 
-        /**
-         * Trigger actions
-         * @memberOf Trigger
-         * @name Trigger#actions
-         * @public
-         * @type {array}
-         */
-        self.actions = Utils.convertToArray(data, "action");
-
-        /**
-         * Trigger conditions
-         * @memberOf Trigger
-         * @name Trigger#conditions
-         * @public
-         * @type {array}
-         */
-        self.conditions = Utils.convertToArray(data, "condition");
-
-        /**
-         * Trigger events
-         * @memberOf Trigger
-         * @name Trigger#events
-         * @public
-         * @type {array}
-         */
-        self.events = Utils.convertToArray(data, "event");
+        var events = Utils.convertToArray(data, "event");
+        var actions = Utils.convertToArray(data, "action");
+        var condition = data.condition;
 
         /**
          * Trigger name
@@ -86,26 +63,10 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 
         self.timerIds = [];
 
-        function validateConditions(eventArgs) {
-            var validationResult = true;
-            // Conditions are handled with AND operator
-            // => each condition must be valid
-            _.each(self.conditions, function (condition) {
-                var operator = condition.operator;
-				var values = Utils.convertToArray(condition, "value");
-                var firstValue = values[0] ? magicast.resolveAndGetValue(values[0], eventArgs) : undefined;
-                var secondValue = values[1] ? magicast.resolveAndGetValue(values[1], eventArgs) : undefined;
-                if (!Utils.validateCondition(operator, firstValue, secondValue)) {
-                    validationResult = false;
-                }
-            });
-            return validationResult;
-        }
-
         function resolveActions() {
 			var promises = [];
 		
-            _(self.actions).each(function (data) {
+            _(actions).each(function (data) {
 				var d = $.Deferred();
 				var url = magicast.resolveAndGetValue(data.asset);
 				if (Magicaster.actions[url] && typeof Magicaster.actions[url] === 'function') {
@@ -187,7 +148,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
             // NOTE! Stop does not clear ongoing timers. For that purpose use destroy-method.
             Magicaster.console.log("[Trigger] stop", self);
             // Loop through each event and stop the listeners
-            _(self.events).each(function (event) {
+            _(events).each(function (event) {
 				if (event.unbindEventListener && typeof event.unbindEventListener === 'function') {
 					event.unbindEventListener();
 					delete event.unbindEventListener;
@@ -205,10 +166,12 @@ define(["jquery", "utils/utils"], function ($, Utils) {
          * @name Trigger#start
          */
         self.start = function () {
+
+			Magicaster.console.log("[Trigger] start", self);
 		
 			// unbind and bind event listeners, to make trigger work in the correct order
 			self.stop();
-			_(self.events).each(function (event) {
+			_(events).each(function (event) {
 				event.unbindEventListener = magicast.resolveAndBindEventListener(event, function(eventArgs, e) {
 					self.execute(eventArgs);
 				});
@@ -240,40 +203,49 @@ define(["jquery", "utils/utils"], function ($, Utils) {
          */
         self.execute = function (eventArgs) {
 		
-            // Trigger can have conditions to be validated.
-            if (self.conditions.length && !validateConditions(eventArgs)) {
-                Magicaster.console.log("[Trigger] execute, but conditions are not met", eventArgs);
+            if (condition && !magicast.resolveAndGetValue(condition, eventArgs)) {
+                Magicaster.console.log("[Trigger] execute, but conditions are not met", self, eventArgs);
                 return;
             }
 
-			Magicaster.console.log("[Trigger] execute", eventArgs);
+			Magicaster.console.log("[Trigger] execute", self, eventArgs);
 			
-            _(self.actions).each(function (data) {
-				var url = magicast.resolveAndGetValue(data.asset);
-				var action = Magicaster.actions[url];
-				if (action) {
-				
-					var parameters = data.parameters || {};
-					
-					// Cache Magicaster.findMagicastsByName
-					if (!action.targetMagicasts) {
-						action.targetMagicasts = data.magicast ? Magicaster.findMagicastsByName(data.magicast) : magicast;
-						action.targetMagicasts = _.flatten([action.targetMagicasts]);
-					}
-
-					_(action.targetMagicasts).each(function (magicast) {
-						var time = data.wait * 1000 || 0;
-						if (time > 0) {
-							self.timerIds.push(setTimeout(function () {
-								action.call(null, parameters, eventArgs, magicast);
-							}, time));
-						}
-						else {
-							action.call(null, parameters, eventArgs, magicast);
-						}
-					});
+			_(actions).each(function (data) {
+			
+				var time = 0;
+				if (data.wait) {
+					time = magicast.resolveAndGetValue(data.wait, eventArgs) * 1000;
 				}
-            });
+
+				if (time > 0) {
+					self.timerIds.push(setTimeout(function () {
+						run();
+					}, time));
+				}
+				else {
+					run();
+				}				
+				
+				function run() {
+					var url = magicast.resolveAndGetValue(data.asset, eventArgs);
+					var action = Magicaster.actions[url];
+					if (action && (!data.condition || magicast.resolveAndGetValue(data.condition, eventArgs))) {
+					
+						// cache Magicaster.findMagicastsByName
+						if (!action.targetMagicasts) {
+							action.targetMagicasts = data.magicast ? Magicaster.findMagicastsByName(magicast.resolveAndGetValue(data.magicast, eventArgs)) : magicast;
+							action.targetMagicasts = _.flatten([action.targetMagicasts]);
+						}
+
+						_(action.targetMagicasts).each(function (magicast) {
+							action.call(null, magicast, data.parameters, eventArgs);
+						});
+					}
+				}
+				
+			});
+
+			
 		};
 
         //

@@ -38,24 +38,34 @@
     /* Other includes which are not found by searching the main module recursively.
      * In Magicast case these include certain actions and components (including base component). */
     "include": [
-        "actions/addcssclass",
-        "actions/applycollisiondetectiongroup",
-        "actions/captureimage",
-        "actions/changenode",
-        "actions/changeproperty",
-        "actions/grantsessionaccess",
-        "actions/removecssclass",
-        "actions/setcssstyle",
-        "actions/setvariable",
-        "actions/triggerevent",
-        "components/2013/audio",
-        "components/2013/box",
-        "components/2013/dummy",
-        "components/2013/image",
-        "components/2013/text",
-        "components/2013/video",
-        "components/2015/youtube",
+        "actions/2015/addcssclass",
+        "actions/2015/applycollisiondetectiongroup",
+        "actions/2015/cancelfullscreen",
+        "actions/2015/captureimage",
+        "actions/2015/changenode",
+        "actions/2015/changeproperty",
+        "actions/2015/controlaudio",
+        "actions/2015/controlimage",
+        "actions/2015/controltext",
+        "actions/2015/controlvideo",
+        "actions/2015/controlyoutube",
+        "actions/2015/grantsessionaccess",
+        "actions/2015/openbrowser",
+        "actions/2015/removecssclass",
+        "actions/2015/requestfullscreen",
+        "actions/2015/sendanalytics",
+        "actions/2015/setcssstyle",
+        "actions/2015/setvariable",
+        "actions/2015/triggerevent",
         "components/2015/areena",
+        "components/2015/audio",
+        "components/2015/box",
+        "components/2015/cache",
+        "components/2015/dummy",
+        "components/2015/image",
+        "components/2015/text",
+        "components/2015/video",
+        "components/2015/youtube",
         "requirelib"
     ],
 
@@ -63,18 +73,23 @@
     "exclude": [],
 
     paths: {
-        'jquery': "libs/jquery-2.0.3",
-        'requirelib': "libs/require",
-        'lodash': "libs/lodash",
-        'extend': "libs/extend",
-        'verge': "libs/verge",
-        //'pixi': "libs/pixi.dev",
-        //'html2canvas': "libs/html2canvas",
-        'binaryajax': "libs/binaryajax",
-        'exif': "libs/exif",
-        'fpsmeter': "libs/fpsmeter"
+		'requirelib': "libs/require",
+		'jquery': "libs/jquery-2.0.3",
+		'jquery.easing': "libs/jquery.easing.1.3",
+		'lodash': "libs/lodash",
+		'extend': "libs/extend",
+		'verge': "libs/verge",
+		//'pixi': "libs/pixi.dev",
+		//'html2canvas': "libs/html2canvas",
+		'binaryajax': "libs/binaryajax",
+		'exif': "libs/exif",
+		'fpsmeter': "libs/fpsmeter",
+		'webfont': "libs/webfont"
     },
     shim: {
+		'jquery.easing': {
+			deps: ['jquery']
+		},
         'extend': {
             exports: 'BaseClass'
         },
@@ -101,7 +116,10 @@
         },
         'fpsmeter': {
             exports: "FPSMeter"
-        }
-    }
+        },
+		'webfont': {
+			exports: 'WebFont'
+		}
+	}
 
 })

@@ -24,8 +24,8 @@
 define(["jquery"], function ($) {
     "use strict";
 
-    function changeNode(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/changeNode]", params, eventArgs, magicast);
+    function changeNode(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/changeNode]", magicast, params, eventArgs);
 
 		var name = "";
 		if (params.option) {

@@ -38,7 +38,7 @@ define(function () {
      *
      *  2. Implement the capability detection algorithm
      *
-     *  3. Update capabilityArray according to the existence of the capability.
+     *  3. Update capabilities according to the existence of the capability.
      *
      * Capability requirements are defined in 2 levels:
      *
@@ -50,12 +50,7 @@ define(function () {
      */
     var Capabilities = (function () {
 
-        /**Array containing all resolved capabilities
-         * @name Magicast#capabilities
-         * @type {Array<String>}
-         * @public
-         */
-        var capabilityArray = [];
+        var capabilities = {};
 
         /**
          * Determine running platform capabilities.
@@ -65,53 +60,67 @@ define(function () {
          */
         function detectCapabilities() {
             Magicaster.console.log("[Capabilities] detectCapabilities");
-
-            detectCameraSupport();
-        }
-
-        /**
-         * Determine if running platform has webcam/camera support.
-         */
-        function detectCameraSupport() {
-            capabilityArray["camera"] = (navigator.getUserMedia ||
+			
+            capabilities["camera"] = (navigator.getUserMedia ||
                                          navigator.webkitGetUserMedia ||
                                          navigator.mozGetUserMedia ||
                                          navigator.msGetUserMedia) ? true : false;
+										 
+			capabilities["Android"] = capabilities["iPhone"] = capabilities["iPod"] = capabilities["iPad"] = capabilities["WP"] = 0;
+										 
+			if ((navigator.userAgent.match(/Android/i))) { capabilities["Android"] = 1; }
+			if ((navigator.userAgent.match(/iPhone/i))) { capabilities["iPhone"] = 1; }
+			if ((navigator.userAgent.match(/iPod/i))) { capabilities["iPod"] = 1; }
+			if ((navigator.userAgent.match(/iPad/i))) { capabilities["iPad"] = 1; }
+			if ((navigator.userAgent.match(/IEMobile/i))) { capabilities["WP"] = 1; }
 
-            Magicaster.console.log("Camera support: " + capabilityArray["camera"]);
-        }
+			capabilities["iOS"] = capabilities["iPad"] || capabilities["iPod"] || capabilities["iPad"];
+			
+			capabilities["video"] = !capabilities["iPad"] && !capabilities["iPod"];
+		}
 
         /**
          * Validate requirements against capabilities of the running platform.
          * @public
          * @method
          * @name Capabilities#validateRequirements
-         * @param requirementsArray {Array<String>} Required capabilities
-         * @param failedRequirements {Array<String>} Returning list of requirements that have not been met.
+         * @param requirements {Array} Required capabilities
+         * @param failed {Array} Returning requirements that failed
          * @returns {Boolean} true, if requirements are according to device capabilities
          *                    false, if requirements can not be fulfilled
          */
-        function validateRequirements(requirementsArray, failedRequirements) {
-            Magicaster.console.log("[Capabilities] validateRequirements", requirementsArray);
+        function validateRequirements(requirements, failed) {
+            Magicaster.console.log("[Capabilities] validateRequirements");
 
-            if (requirementsArray && requirementsArray.length) {
-                return _.every(requirementsArray, function(requirement) {
-                    var supported = capabilityArray[requirement];
-                    if (!supported && failedRequirements) {
-                        failedRequirements.push(requirement);
+            if (requirements && requirements.length) {
+                return _.every(requirements, function(requirement) {
+                    var supported = capabilities[requirement];
+                    if (!supported && failed) {
+                        failed.push(requirement);
                     }
                     return supported;
                 });
             }
             else {
                 return true;
-            }
+            }			
         }
+		
+        /**
+         * Get capabilities of the running platform
+         * @public
+         * @method
+         * @name Capabilities#getCapabilities
+         * @returns {Array} Device capabilities
+         */
+		function getCapabilities() {
+			return capabilities;
+		}
 
         return {
-            capabilities: capabilityArray,
             detectCapabilities: detectCapabilities,
-            validateRequirements: validateRequirements
+            validateRequirements: validateRequirements,
+			getCapabilities: getCapabilities
         };
 
     })();

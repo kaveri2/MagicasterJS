@@ -24,8 +24,8 @@
 define(function () {
     "use strict";
 
-    function setVariable(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/setVariable]", params, eventArgs, magicast);
+    function setVariable(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/setVariable]", magicast, params, eventArgs);
 		magicast.resolveAndSetVariable(params.variable, magicast.resolveAndGetValue(params.value, eventArgs));
     };
 

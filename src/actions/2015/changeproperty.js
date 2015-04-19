@@ -24,25 +24,22 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-	function changeProperty(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/changeProperty]", params, eventArgs, magicast);
+	function changeProperty(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/changeProperty]", magicast, params, eventArgs);
 
-        var magicasts = params.property.magicast ? Magicaster.findMagicastsByName(params.property.magicast) : [magicast];
+        var magicasts = params.property.magicast ? Magicaster.findMagicastsByName(magicast.resolveAndGetValue(params.property.magicast, eventArgs)) : [magicast];
         _.each(magicasts, function (magicast) {
-			var layers = Utils.convertToArray(params.property, "layer");
-            _(layers).each(function(layer){
-                var l = magicast.findLayerByName(layer);
-                if (l) {
-                    var name = params.property.name;
-                    var value = magicast.resolveAndGetValue(params.value, eventArgs);					
-                    var ease = params.ease;
-                    var time = params.time;
-                    var callback = params.completeEvent ? function () {
-                        magicast.resolveAndTriggerEvent(params.completeEvent, eventArgs);
-                    } : null;
-                    magicast.layout.changeProperty(l, name, value, ease, time, callback);
-                }
-            });
+			var l = magicast.findLayerByName(magicast.resolveAndGetValue(params.property.layer, eventArgs));
+			if (l) {
+				var name = magicast.resolveAndGetValue(params.property.name, eventArgs);
+				var value = magicast.resolveAndGetValue(params.value, eventArgs);					
+				var ease = magicast.resolveAndGetValue(params.ease, eventArgs);					
+				var time = magicast.resolveAndGetValue(params.time, eventArgs);					
+				var callback = params.completeEvent ? function () {
+					magicast.resolveAndTriggerEvent(params.completeEvent, eventArgs);
+				} : null;
+				magicast.layout.changeProperty(l, name, value, ease, time, callback);
+			}
         });
     };
 

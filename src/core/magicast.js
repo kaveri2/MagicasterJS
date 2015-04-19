@@ -23,12 +23,11 @@
 
 define(["jquery",
         "utils/utils",
-        "core/node",
         "core/layer",
         "core/trigger",
         "core/layout",
         "core/capabilities"],
-    function ($, Utils, Node, Layer, Trigger, Layout, Capabilities) {
+    function ($, Utils, Layer, Trigger, Layout, Capabilities) {
 
         "use strict";
 
@@ -82,18 +81,18 @@ define(["jquery",
             var fonts;
             var cssRules;
             var nodes;
-            var currentNode = null;
-
+			
 			var styles = [];
 			
+			var properties = {};
+			
 			self.getProperties = function() {
-				if (currentNode) {
-					return currentNode.properties;
-				} else {
-					return {};
-				}
+				return properties;
 			};
 
+            var node = null;
+			var oldNode = null;
+			
             var layers = [];
 			self.getLayers = function() {
 				return layers;
@@ -106,14 +105,7 @@ define(["jquery",
 			};
 			var oldTriggers = [];
 
-            /**
-             * Magicast's variables. Preserved upon node change or refresh.
-             * @memberOf Magicast
-             * @name Magicast#variables
-             * @public
-             * @type {array}
-             */
-            self.variables = [];
+            var variables = {};
 
             /**
              * Magicast's jQuery root element. This is placed within the container defined
@@ -189,9 +181,9 @@ define(["jquery",
 
                 // Check the requirements for the magicast
 				
-				var requirements = Utils.convertToArray(data, "requirement");
-                var failedRequirements = [];
-                if (!Capabilities.validateRequirements(requirements, failedRequirements)) {
+				var requirements = Utils.convertToArray(data, "requirements");
+                var failed = [];
+                if (!Capabilities.validateRequirements(requirements, failed)) {
                     showStatus('requirementsError');
 
                     /**
@@ -209,7 +201,7 @@ define(["jquery",
                         "magicast": self,
                         "name": self.name,
                         "requirements": requirements,
-                        "failed": failedRequirements
+                        "failed": failed
                     }, self.$root[0]);
 
                     d.reject();
@@ -241,30 +233,12 @@ define(["jquery",
             }
 
             /**
-             * Finds node by name
-             * @param name Name of the node
-             * @returns {Node}
-             */
-            function findNodeByName(name) {
-                return _.find(nodes, {name: name});
-            }
-
-            /**
              * Finds trigger by name
              * @param name Name of the trigger
              * @returns {Trigger}
              */
             function findTriggerByName(name) {
                 return _.find(triggers, {name: name});
-            }
-
-            /**
-             * Creates a node according to the given data.
-             * @param data
-             * @returns {Node}
-             */
-            function createNode(data, refresh) {
-               return new Node(data, self, refresh);
             }
 
             /**
@@ -403,7 +377,7 @@ define(["jquery",
             self.setVariable = function (name, value) {
                 name = $.trim(name);
                 log("[Magicast] setVariable", name, value);
-                self.variables[name] = value;
+                variables[name] = value;
             };
 
             /**
@@ -416,7 +390,7 @@ define(["jquery",
              */
             self.getVariable = function (name) {
                 name = $.trim(name);
-                var value = self.variables[name];
+                var value = variables[name];
                 log("[Magicast] getVariable", name, value);
                 return value;
             };
@@ -444,28 +418,58 @@ define(["jquery",
             };
 
             /**
-             * Internal function for changing to given node object
-             * @public
-             * @function
-             * @name Magicast#changeNode
-             * @param node Node instance
-             * @returns {promise}
+             * Change node
+             * @param name Name of the node
              */
-			 
-            function changeNode(node) {
-                log("[Magicast] changeNode", node);
+            self.changeNode = function (name, refresh) {
+			
+				Magicaster.console.log("[Magicast] changeNode", name);
 
                 var d = $.Deferred();
+				
+				if (oldNode || (!refresh && node == name)) {
+					d.resolve();
+					return d.promise();
+				}				
+				
+				var data;
+				if (name == "") {
+					data = nodes[0];
+				} else {
+					data = _.find(nodes, {name: name});
+				}
+				
+                if (data) {
+				
+					showStatus('changingNode');
+				
+					oldNode = node;
+					node = Utils.validateName(data.name, "Node");
+				
+					var newProperties = Utils.convertToArray(data, "property");
+					
+					self.createLayers(Utils.convertToArray(data, "layer"), refresh);
+					self.createTriggers(Utils.convertToArray(data, "trigger"), refresh);
 
-                if (node) {
-
-                    showStatus('changingNode');
-
-                    currentNode = node;
-															
-                    node.getLoadPromise().done(function () {
-                        hideStatus('changingNode').done(function () {
-						
+					var a = [];
+					_.each(layers, function (layer) {
+						a.push(layer.getLoadPromise());
+					});
+					_.each(triggers, function (trigger) {
+						a.push(trigger.getLoadPromise());
+					});
+					
+					$.when.apply(window, a).then(function () {
+							
+						 hideStatus('changingNode').done(function () {
+						 
+							oldNode = null;
+						 
+							// update new properties
+							_(newProperties).each(function(newProperty) {
+								properties[newProperty.name] = self.resolveAndGetValue(newProperty.value);
+							});
+							
 							// remove old layers
 							_(oldLayers).each(function(layer) {
 								layer.destroy();
@@ -536,34 +540,20 @@ define(["jquery",
                             Utils.dispatchEvent("magicaster_magicastNodeChanged", eventData, magicastElem);
 
 							// request layout update
-                            self.layout.dirty();
+                            self.layout.dirty();							
+	
+							d.resolve();
 							
-                            d.resolve();
-                        });
-                    });
+						});
+					
+					});		
+		
                 }
-                else {
-                    d.resolve();
-                }
-
-                return d.promise();
-            }
-
-            /**
-             * Change node
-             * @param name Name of the node
-             */
-            self.changeNode = function (name) {
-				if (currentNode && currentNode.name == name) {
-					return;
+				else {
+					d.resolve();
 				}
-                var node = findNodeByName(name);
-                if (node) {
-                    var newNode = createNode(node, false);
-                    newNode.getLoadPromise().done(function () {
-                        changeNode(newNode);
-                    });
-                }
+				
+				return d.promise();
             };
 
             /**
@@ -740,20 +730,15 @@ define(["jquery",
                     .done(function () {
                         // start listening to server event Access.update, because it requires reloading
                         $(document).on('magicaster_serverEvent_Access_update', function (e) {
-                            log("[Magicast] reloading after Access.update");
+                            log("[Magicast] Reloading after Access.update");
                             self.loadAndProcessData()
                                 .done(function () {
-                                    var currentNodeName = currentNode ? currentNode.name : "";
-                                    var currentNodeName = currentNode ? currentNode.name : "";
-                                    var node = findNodeByName(currentNodeName);
-                                    if (node) {
-                                        changeNode(createNode(node, true));
-                                    }
+									self.changeNode(node, true);
                                 })
-                                .fail(function () {/* No ops */});
+                                .fail(function () {});
                         });
                     })
-                    .fail(function () {/* No ops */});
+                    .fail(function () {});
             }
             else {
                 showStatus('initializeError');
@@ -791,7 +776,7 @@ define(["jquery",
 					
 						// start with the first node
 						if (nodes.length) {
-							changeNode(createNode(nodes[0], false)).done(function () {
+							self.changeNode("", false).done(function () {
 
 								/**
 								 * Fired to the Magicast container when Magicast is started

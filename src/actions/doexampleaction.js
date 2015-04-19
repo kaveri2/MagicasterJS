@@ -28,11 +28,11 @@ define(["jquery"], function ($) {
      * doExampleAction is an example action
 	 * @class
 	 * @name doExampleAction
+     * @param magicast {Magicast} Reference to magicast object
      * @param params {Object} Parameters from XML
      * @param eventArgs {Object} Event's arguments
-     * @param magicast {Magicast} Reference to magicast object
      */
-	function doExampleAction(params, eventArgs, magicast) {
+	function doExampleAction(magicast, params, eventArgs) {
         /** @lends Action **/
         if (!(this instanceof Action)) {
             throw new TypeError("Constructor cannot be called as a function.");

@@ -24,8 +24,8 @@
 define(["jquery"], function ($) {
     "use strict";
 
-    function captureImage(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/captureImage]", params, eventArgs, magicast);
+    function captureImage(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/captureImage]", magicast, params, eventArgs);
 
         var layer = magicast.findLayerByName(params.layer);
         if (layer) {

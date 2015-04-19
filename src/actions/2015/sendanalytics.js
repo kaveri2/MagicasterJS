@@ -24,8 +24,8 @@
 define(["jquery"], function ($) {
     "use strict";
 
-    function sendAnalytics(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/sendAnalytics]", params, eventArgs, magicast);
+    function sendAnalytics(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/sendAnalytics]", magicast, params, eventArgs);
 
 		if (Magicaster.configuration.analytics) {
 			Magicaster.configuration.analytics.send(magicast, params.event, params.label, params.value !== undefined ? parseInt(params.value) : undefined);

@@ -76,7 +76,7 @@ define(["jquery",
             var initializePromises = [];
             var startPromises = [];
 
-            var globalVariables = []; // global variables
+            var globalVariables = {}; // global variables
 
             var fpsMeter = null;
 
@@ -696,7 +696,10 @@ define(["jquery",
 
                 // Detect the capabilities of the running platform
                 Capabilities.detectCapabilities();
-
+				_(Capabilities.getCapabilities()).each(function(value, key) {
+					globalVariables["capability_" + key] = 0 + value;
+				});
+			
                 // Bind keyboard events
                 KeyEvents.bindKeyboardEvents();
 
@@ -849,68 +852,159 @@ define(["jquery",
 			}
 			
             function resolveAndGetValue(magicast, layer, params, eventArgs) {
-                Magicaster.console.log("[Magicaster] resolveAndGetValue", magicast, layer, params, eventArgs);
+//				Magicaster.console.log("[Magicaster] resolveAndGetValue", magicast, layer, params, eventArgs);
 				
 				if (params instanceof Object === true) {
-                    if (params.type === "constant") {
+				
+					var type = params.type;
+				
+                    if (type === "constant") {
                         return params.value;
                     }
-                    if (params.type === "source") {
+                    if (type === "source") {
                         return parseSourceName(params.value);
                     }
-                    if (params.type === "eventArgument") {
+                    if (type === "eventArgument") {
                         return eventArgs ? eventArgs[params.value] : null;
                     }
-                    if (params.type === "variable") {
+                    if (type === "variable") {
                         return resolveAndGetVariable(magicast, params.value);
                     }
-                    if (params.type === "property") {
+                    if (type === "property") {
                         return resolveAndGetProperty(magicast, layer, params.value);
                     }
-                    if (params.type === "calculation") {
-                        var values = Utils.convertToArray(params.value, "value");
+                    if (type === "calculation") {
+					
+						var args = [];
+						_(Utils.convertToArray(params.value, "argument")).each(function (value) {
+							args.push(Magicaster.resolveAndGetValue(magicast, layer, value, eventArgs));
+						});
 						
-						var i = 0;
-						var retVal = undefined;
-                        while (values[i]) {
-							if (i==0) {
-								retVal = Utils.calculate(params.value["function"],
-									values[0] ? Magicaster.resolveAndGetValue(magicast, layer, values[0], eventArgs) : undefined,
-									values[1] ? Magicaster.resolveAndGetValue(magicast, layer, values[1], eventArgs) : undefined
-								);
-								i = 2;
-							} else {
-								retVal = Utils.calculate(params.value["function"],
-									retVal,
-									values[i] ? Magicaster.resolveAndGetValue(magicast, layer, values[i], eventArgs) : undefined
-								);
-								i = i + 1;
+						var value = undefined;
+						var cmp, num;
+						
+						switch (params.value["function"]) {
+						// NUMBER
+						case 'add':
+							value = 0;
+							_(args).each(function(arg) {
+								num = parseFloat(arg) || 0;
+								value = value + num;
+							});
+							break;
+						case 'dec':
+							value = (parseFloat(args[0]) || 0) - (parseFloat(args[1]) || 0);
+							break;
+						case 'mul':
+							value = 1;
+							_(args).each(function(arg) {
+								num = parseFloat(arg) || 0;
+								value = value * num;
+							});
+							break;
+						case 'div':
+							if (!arg2) {
+								throw new RangeError("Division by zero.");
 							}
+							value = (parseFloat(args[0]) || 0) / (parseFloat(args[1]) || 0);
+							break;
+						// BOOLEAN
+						case 'and':
+							value = 1;
+							_(args).each(function(arg) {
+								if (!arg) {
+									value = 0;
+								}
+							});
+							break;
+						case 'or':
+							value = 0;
+							_(args).each(function(arg) {
+								if (arg) {
+									value = 1;
+								}
+							});
+							break;
+						case 'not':
+							value = args[0] ? 0 : 1;
+							break;
+						case 'eq':
+							value = 1;
+							cmp = "" + args[0];
+							_(args).each(function(arg) {
+								if ("" + arg != cmp) {
+									value = 0;
+								}
+							});
+							break;
+						case 'ne':
+							value = 1;
+							cmp = "" + args[0];
+							_(args).each(function(arg) {
+								if ("" + arg == cmp) {
+									value = 0;
+								}
+							});
+							break;
+						case 'gt':
+							value = 1;
+							cmp = parseFloat(args[0]);
+							_(args).each(function(arg) {
+								if (arg != args[0]) {
+									num = parseFloat(arg);
+									if (num <= cmp) {
+										value = 0;
+									}
+									cmp = num;
+								}
+							});
+							break;
+						case 'lt':
+							value = 1;
+							cmp = parseFloat(args[0]);
+							_(args).each(function(arg) {
+								if (arg != args[0]) {
+									num = parseFloat(arg);
+									if (num >= cmp) {
+										value = 0;
+									}
+									cmp = num;
+								}
+							});
+							break;
+						case 'isNull':
+							value = args[0] ? 0 : 1;
+							break;
+						case 'isNotNull':
+							value = args[0] ? 1 : 0;
+							break;		
+						// STRING
+						case 'concat':
+							value = args.join("");
+							break;
+						// MISC
+						case 'rand':
+							value = _.random(arg1Num, arg2Num);
+							break;
+						default:
+							break;
 						}
-						return retVal;
+						
+						return value;						
                     }
-                    if (params.type === "conditional") {
+                    if (type === "conditional") {
+						console.log("CONDITIONAL", params);
                         var cases = Utils.convertToArray(params.value, "case");
 						var retVal = undefined;
                         _.each(cases, function(c) {
-							var validationResult = true;
-							var conditions = Utils.convertToArray(c, "condition");
-							_.each(conditions, function (condition) {
-								var operator = condition.operator;
-								var values = Utils.convertToArray(condition, "value");
-								var firstValue = values[0] ? Magicaster.resolveAndGetValue(magicast, layer, values[0], eventArgs) : undefined;
-								var secondValue = values[1] ? Magicaster.resolveAndGetValue(magicast, layer, values[1], eventArgs) : undefined;
-								if (!Utils.validateCondition(operator, firstValue, secondValue)) {
-									validationResult = false;
-								}
-							});
-							if (validationResult && retVal === undefined) {
-								retVal =  Magicaster.resolveAndGetValue(magicast, layer, c.value, eventArgs);
+							if (retVal === undefined && Magicaster.resolveAndGetValue(magicast, layer, c.condition, eventArgs)) {
+								retVal = Magicaster.resolveAndGetValue(magicast, layer, c.value, eventArgs);
 							}
 						});
+						console.log("CONDITIONAL", retVal);
 						return retVal;
                     }
-                    if (params.type === "random") {
+                    if (type === "random") {
                         var options = Utils.convertToArray(params.value, "option");
                         var totalWeight = 0;
                         options.forEach(function (option) {
@@ -927,12 +1021,13 @@ define(["jquery",
                             return Magicaster.resolveAndGetValue(magicast, layer, options[index].value, eventArgs);
                         }
                     }
-                }
-				
-				var resolver = configuration.valueResolvers[params.type];
-                if (resolver) {
-                    return resolver(params.value);
-                }
+					
+					var resolver = configuration.valueResolvers[type];
+					if (resolver) {
+						return resolver(params.value);
+					}
+					
+                }				
 				
                 return params;
             }
@@ -953,6 +1048,7 @@ define(["jquery",
                 var target;
 				
 				if (magicast) {
+				
 					if (layer) {
 						properties = {
 							'magicast': magicast,
@@ -969,44 +1065,51 @@ define(["jquery",
 							'args': args
 						};
 						target = magicast.$root[0];
-					}
+					}				
+				
+					/**
+					 * Raised when Magicaster event occurs. Global level event is dispatched to document.
+					 * Magicast level event is dispatched to Magicast container. Layer level event is dispatched to layer container.
+					 * Magicast and layer level events can also be listened from document due to bubbling.
+					 *
+					 * Example of real fired event name is e.g. "magicaster_event_someEventName".
+					 *
+					 * @event
+					 * @name magicaster_event_[eventName]
+					 * @param magicast {Object} Reference to Magicast instance
+					 * @param layer {String} Layer name if event is for layer. Otherwise layer is not defined.
+					 * @param name {String} Event name
+					 * @param args {String} Event arguments
+					 */
+					Utils.dispatchEvent('magicaster_event_' + name, properties, target);
+
+					/**
+					 * Raised when Magicaster event occurs. Event is dispatched to either target Magicast or to target layer,
+					 * but events can be listened from document due to bubbling.
+					 *
+					 * @event
+					 * @name magicaster_event
+					 * @param magicast {Object} Reference to Object instance
+					 * @param layer {String} Layer name if event is for layer. Otherwise layer is not defined.
+					 * @param name {String} Event name
+					 * @param args {String} Event arguments
+					 */
+					Utils.dispatchEvent('magicaster_event', properties, target);
+				
 				}
 				else {
+				
 					properties = {
 						'name': name,
 						'args': args
 					};
 					target = document;
+					
+					Utils.dispatchEvent('magicaster_global_event_' + name, properties, target);
+					Utils.dispatchEvent('magicaster_global_event_', properties, target);
+			
 				}
 
-                /**
-                 * Raised when Magicaster event occurs. Global level event is dispatched to document.
-				 * Magicast level event is dispatched to Magicast container. Layer level event is dispatched to layer container.
-                 * Magicast and layer level events can also be listened from document due to bubbling.
-                 *
-                 * Example of real fired event name is e.g. "magicaster_event_someEventName".
-                 *
-                 * @event
-                 * @name magicaster_event_[eventName]
-                 * @param magicast {Object} Reference to Magicast instance
-                 * @param layer {String} Layer name if event is for layer. Otherwise layer is not defined.
-                 * @param name {String} Event name
-                 * @param args {String} Event arguments
-                 */
-                Utils.dispatchEvent('magicaster_event_' + name, properties, target);
-
-                /**
-                 * Raised when Magicaster event occurs. Event is dispatched to either target Magicast or to target layer,
-                 * but events can be listened from document due to bubbling.
-                 *
-                 * @event
-                 * @name magicaster_event
-                 * @param magicast {Object} Reference to Object instance
-                 * @param layer {String} Layer name if event is for layer. Otherwise layer is not defined.
-                 * @param name {String} Event name
-                 * @param args {String} Event arguments
-                 */
-                Utils.dispatchEvent('magicaster_event', properties, target);
             }
 
             /**
@@ -1079,15 +1182,19 @@ define(["jquery",
 
                 var root;
                 var filter = "";
-                var name = "magicaster_event_" + params.name;
+                var name = "";
 
                 // global level
                 if ($.trim(params.level) === "global") {
                     root = document;
+					name = "magicaster_global_event_" + params.name;
                 }
 
                 // magicast or layer level
                 else {
+				
+					var name = "magicaster_event_" + params.name;
+				
 
                     if (!params.magicast) {
                         root = magicast.$root;

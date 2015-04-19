@@ -24,9 +24,9 @@
 define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
-	function controlAudio(parameters, eventArgs, magicast) {
+	function controlAudio(magicast, parameters, eventArgs) {
 	
-		var layer = magicast.findLayerByName(parameters.layer);
+		var layer = magicast.findLayerByName(magicast.resolveAndGetValue(parameters.layer, eventArgs));
 		var component = layer ? layer.getComponent() : null;
 		if (component) {
 			component.control(parameters.method, parameters.parameters);

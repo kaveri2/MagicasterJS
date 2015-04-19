@@ -24,7 +24,7 @@
 define(function () {
     "use strict";
 
-    function applyCollisionDetectionGroup(params, eventArgs, magicast) {
+    function applyCollisionDetectionGroup(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/applyCollisionDetectionGroup]", params, magicast);
 		
 		var magicasts = params.layer.magicast ? Magicaster.findMagicastsByName(params.layer.magicast) : [magicast];

@@ -24,8 +24,8 @@
 define(function () {
     "use strict";
 
-    function grantSessionAccess(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/grantSessionAccess]", params, eventArgs, magicast);
+    function grantSessionAccess(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/grantSessionAccess]", magicast, params, eventArgs);
 		Magicaster.server.callMethod("Session.grantAccess", params);
 	};
 

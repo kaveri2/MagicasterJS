@@ -328,9 +328,9 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
          * @returns {*}
          */
         function calculateLayer(layer) {
-
-            // TODO: Calculate the rest of the properties
-            var w, h;
+		
+			if (layer.calculated) return;
+			layer.calculated = true;
 
             // If there is no viewport defined, use magicast's container for calculating the geometry
             // When viewport is defined, only viewport layer uses magicast's container as source for calculations.
@@ -338,10 +338,24 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 
             layer.parentWidth = $lcp[0].clientWidth;
             layer.parentHeight = $lcp[0].clientHeight;
-
+			
             var layerProperties = layer.getProperties();
             var layerCalcs = layer.getCalculations();
+			
+			var refFrameLayer = null;
+			var refFrameLayerProperties = null;
+			var refFrameLayerCalculations = null;
+			if (layerProperties.refFrame) {
+				refFrameLayer = magicast.findLayerByName(layerProperties.refFrame);
+				if (refFrameLayer) {
+					calculateLayer(refFrameLayer);
+					refFrameLayerProperties = refFrameLayer.properties;
+					refFrameLayerCalculations = refFrameLayer.calculations;
+				}
+			}			
 
+            var w, h; // used in calculations
+			
             if (layerProperties.absWidth !== undefined) {
                 w = parseFloat(layerProperties.absWidth);
 			}
@@ -378,6 +392,22 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 					}
 				}
             }
+			
+			/*
+			if (refFrameLayerCalculations) {				
+				var rtw = refFrameLayerCalculations.width / 100;
+				var rth = refFrameLayerCalculations.height / 100;
+		
+				if (layerProperties.refFrameRelWidth != null) {
+					widthSet = true;
+					width = width + rtw * layerProperties.refFrameRelWidth;
+				} 
+				if (layerProperties.refFrameRelHeight != null) {
+					heightSet = true;
+					height = height + rth * layerProperties.refFrameRelHeight;					
+				}
+			}
+			*/
 			
 			// get the layer's geometry for further calculations
 			if (layer.getComponent()) {
@@ -502,6 +532,54 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 			if (layerProperties.alpha !== undefined) {
 				layerCalcs.alpha = parseFloat(layerProperties.alpha) / 100;
 			}
+			
+			if (refFrameLayerCalculations) {
+		
+				// scale
+				if (layerProperties.refFrameAnchorScaleX) layerCalculations.scaleX = layerCalculations.scaleX * refFrameLayerCalculations.scaleX;
+				if (layerProperties.refFrameAnchorScaleY) layerCalculations.scaleY = layerCalculations.scaleY * refFrameLayerCalculations.scaleY;
+			
+				// rotation
+				if (layerProperties.refFrameAnchorRotation) layerCalculations.rotation = layerCalculations.rotation + refFrameLayerCalculations.rotation;
+
+				// alpha
+				if (layerProperties.refFrameAnchorAlpha) layerCalculations.alpha = layerCalculations.alpha * refFrameLayerCalculations.alpha;
+
+				// x, y
+				
+				/*
+				if (layerProperties.refFrameAnchorX) layerCalculations.parallaxLevelX = layerCalculations.parallaxLevelX + refFrameLayerCalculations.parallaxLevelX;
+				var tmpX:Number = refFrameLayer.originalWidth ? -refFrameLayerCalculations.referenceX / refFrameLayer.originalWidth * refFrameLayerCalculations.width : 0;
+				if (layerProperties.refFrameAbsX != null) tmpX = tmpX + layerProperties.refFrameAbsX;
+				if (layerProperties.refFrameRelX != null) tmpX = tmpX + layerProperties.refFrameRelX * refFrameLayerCalculations.width / 100;
+				if (layerProperties.refFramSelfRelX != null) tmpX = tmpX; // TODO
+
+				if (layerProperties.refFrameAnchorY) layerCalculations.parallaxLevelY = layerCalculations.parallaxLevelY + refFrameLayerCalculations.parallaxLevelY;
+				var tmpY:Number = refFrameLayer.originalHeight ? -refFrameLayerCalculations.referenceY / refFrameLayer.originalHeight * refFrameLayerCalculations.height : 0;
+				if (layerProperties.refFrameAbsY != null) tmpY = tmpY + layerProperties.refFrameAbsY;
+				if (layerProperties.refFrameRelY != null) tmpY = tmpY + layerProperties.refFrameRelY * refFrameLayerCalculations.height / 100;
+				if (layerProperties.refFramSelfRelY != null) tmpY = tmpY; // TODO
+				
+				// special case: 
+				// if reference layer is not scaled according to parallax, the reference plane must be scaled
+				if (refFrameLayerCalculations.parallaxLevel && !refFrameLayerCalculations.parallaxScale) {
+					scale = properties.cameraParallaxLevel / (1 + (refFrameLayerCalculations.parallaxLevel - 1) / properties.cameraParallaxLevel);
+				} else {
+					scale = 1;
+				}
+				
+				tmpX = tmpX * refFrameLayerCalculations.refFrameScaleX * scale;
+				tmpY = tmpY * refFrameLayerCalculations.refFrameScaleY * scale;
+				var tmpCos:Number = Math.cos(refFrameLayerCalculations.rotation / 360 * Math.PI * 2);
+				var tmpSin:Number = Math.sin(refFrameLayerCalculations.rotation / 360 * Math.PI * 2);								
+				layerCalculations.parallaxLevelX = layerCalculations.parallaxLevelX + (tmpX * tmpCos - tmpY * tmpSin);
+				layerCalculations.parallaxLevelY = layerCalculations.parallaxLevelY + (tmpY * tmpCos + tmpX * tmpSin);
+				
+				// parallaxLevel
+				if (layerProperties.refFrameAnchorParallaxLevel) layerCalculations.parallaxLevel = layerCalculations.parallaxLevel + refFrameLayerCalculations.parallaxLevel;
+				*/
+			}
+			
 			
             // Check if there are dragBounds defined
             if (layerProperties.dragBounds) {
@@ -736,21 +814,20 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             // 2nd actually "draw" the layout (~ set the CSS properties in place)
             // 3rd check the visiblity for those layers that define such property
 
-            // TODO: Define interfaces to allow layers to participate to the calculations (if needed)
-            // Currently only update is called per layer without any params
-            // Layer should be able to calculate own dimensions and/or draw itself
-
+            _(magicast.getLayers()).each(function (layer) {
+				layer.calculated = false;
+			});
+			
             // Then loop through all the layers
             _(magicast.getLayers()).each(function (layer) {
 			
-				var layerProperties = layer.getProperties();
-
                 // In case there was a resize, resize also all the layers
                 resizeLayerClipper(layer, clipDimensions);
 
 				calculateLayer(layer);
 				
-                // Check whether the layer needs re-painting
+				renderLayer(layer);
+				
 				if (magicast.debug) {
 					if (!magicast.debugger) {
 						require(["core/debugger"], function (Debugger) {
@@ -762,8 +839,6 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 						magicast.debugger.drawLayerDebug(magicast, layer);
 					}
 				}
-				
-				renderLayer(layer);
             });
         };
     }

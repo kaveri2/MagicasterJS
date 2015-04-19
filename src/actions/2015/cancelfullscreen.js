@@ -24,8 +24,8 @@
 define(function () {
     "use strict";
 
-    function cancelFullScreen(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/cancelFullScreen]", params, eventArgs, magicast);
+    function cancelFullScreen(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/cancelFullScreen]", magicast, params, eventArgs);
 		var el = magicast.$root.get(0);
 		if (el.webkitExitFullscreen) {
 			el.webkitExitFullscreen();

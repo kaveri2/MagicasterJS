@@ -118,50 +118,6 @@ define(["jquery", "lodash"], function ($, _) {
 
             return validatedName;
         }
-		
-		function validateCondition(operator, firstValue, secondValue) {
-            var result = false;
-            var firstValueInt, secondValueInt;
-            switch (operator) {
-            case 'eq':
-                if (firstValue != null && secondValue != null && ("" + firstValue == "" + secondValue)) {
-                    result = true;
-                }
-                break;
-            case 'ne':
-                if (firstValue != null && secondValue != null && ("" + firstValue != "" + secondValue)) {
-                    result = true;
-                }
-                break;
-            case 'gt':
-                firstValueInt = parseFloat(firstValue);
-                secondValueInt = parseFloat(secondValue);
-                if (firstValueInt > secondValueInt) {
-                    result = true;
-                }
-                break;
-            case 'lt':
-                firstValueInt = parseFloat(firstValue);
-                secondValueInt = parseFloat(secondValue);
-                if (firstValueInt < secondValueInt) {
-                    result = true;
-                }
-                break;
-            case 'isNull':
-                if (firstValue == null) {
-                    result = true;
-                }
-                break;
-            case 'isNotNull':
-                if (firstValue != null) {
-                    result = true;
-                }
-                break;
-            default:
-                break;
-            }
-            return result;
-        }		
 
         /**
          * A method used to make an element draggable, can be used on any html element or magicast layer.
@@ -311,52 +267,6 @@ define(["jquery", "lodash"], function ($, _) {
         }
 
         /**
-         * Performs a calculation using the provided parameters
-         * @public
-         * @function
-         * @name Utils#calculate
-         * @param {String} func - Name of the function to use for calculation
-         * @param {String|Number} arg - 1st argument to use for calculation
-         * @param {String|Number} arg2 - 2nd argument to use for calculation
-         * @returns {*} - Result of the calculation
-         */
-        function calculate(func, arg, arg2) {
-            var value;
-            var arg1Num = parseFloat(arg) || 0;
-            var arg2Num = parseFloat(arg2) || 0;
-			
-            switch (func) {
-            case 'add':
-                value = arg1Num + arg2Num;
-                break;
-            case 'dec':
-                value = arg1Num - arg2Num;
-                break;
-            case 'mul':
-                value = arg1Num * arg2Num;
-                break;
-            case 'div':
-                if (!arg2) {
-                    throw new RangeError("Division by zero.");
-                }
-                value = arg1Num / arg2Num;
-                break;
-            case 'concat':
-                // Concat the unconverted values
-                value = arg + arg2;
-                break;
-            case 'rand':
-                value = _.random(arg1Num,arg2Num);
-                break;
-            default:
-                Magicaster.console.log("[Utils] calculate: Unknown function");
-                break;
-            }
-            return value;
-
-        }
-
-        /**
          * Checks for a collision between the 2 elements.
          * @public
          * @function
@@ -493,11 +403,9 @@ define(["jquery", "lodash"], function ($, _) {
             createObjects: createObjects,
             createObject: createObject,
             validateName: validateName,
-            validateCondition: validateCondition,
             convertArrayToKeyValue: convertArrayToKeyValue,
             addDragSupport: addDragSupport,
             dispatchEvent: dispatchEvent,
-            calculate: calculate,
             checkForCollision: checkForCollision,
             delay: delay,
             convertToCssString: convertToCssString,

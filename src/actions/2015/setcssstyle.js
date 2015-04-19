@@ -24,8 +24,8 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-    function setCssStyle(params, eventArgs, magicast) {
-        Magicaster.console.log("[actions/setCssStyle]", params, eventArgs, magicast);
+    function setCssStyle(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/setCssStyle]", magicast, params, eventArgs);
 
         var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [magicast];
         _.each(magicasts, function (magicast) {
