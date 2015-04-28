@@ -27,14 +27,14 @@ define(["jquery"], function ($) {
     function captureImage(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/captureImage]", magicast, params, eventArgs);
 
-        var layer = magicast.findLayerByName(params.layer);
+        var layer = magicast.findLayerByName(magicast.resolveAndGetValue(params.layer, eventArgs));
         if (layer) {
 		/*
 			var root = magicast.$root;
 			require(["libs/html2canvas"], function (html2canvas) {
 				window.html2canvas(root, {
 					onrendered: function (canvas) {
-						layer.triggerEvent("captureImageReady");
+						magicast.resolveAndTriggerEvent(params.commpleteEvent, eventArgs);
 					}
 				});
 			});

@@ -26,7 +26,7 @@ define(["jquery"], function ($) {
 
     function Dummy(data, layer) {
 		var $content = layer.getContent();
-		$content.text(data.text);
+		$content.text(layer.resolveAndGetValue(data.text));
     };
 
     return Dummy;

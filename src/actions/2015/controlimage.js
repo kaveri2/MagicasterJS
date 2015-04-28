@@ -24,12 +24,12 @@
 define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
-	function controlImage(magicast, parameters, eventArgs) {
+	function controlImage(magicast, params, eventArgs) {
 	
-		var layer = magicast.findLayerByName(magicast.resolveAndGetValue(parameters.layer, eventArgs));
+		var layer = magicast.findLayerByName(magicast.resolveAndGetValue(params.layer, eventArgs));
 		var component = layer ? layer.getComponent() : null;
 		if (component) {
-			component.control(parameters.method, parameters.parameters);
+			component.control(magicast.resolveAndGetValue(params.method, eventArgs), params.parameters);
 		}
 		
 	}

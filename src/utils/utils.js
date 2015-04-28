@@ -31,49 +31,6 @@ define(["jquery", "lodash"], function ($, _) {
         }
 
         /**
-         * Function used to create multiple objects of type Class, see the [createObject method]{@link Utils#createObject} for more info
-         * @public
-         * @function
-         * @name Utils#createObjects
-         * @param Class
-         * @param array
-         * @param parent
-         * @returns {Array<Object>} - Array of Object of type ClassName that was passed to the method
-         * @see Utils#createObject
-         */
-        function createObjects(Class, array, parent) {
-            if (!(array instanceof Array)) {
-                throw new TypeError("No array passed");
-            }
-            var ar = [];
-            array.forEach(function (data, index) {
-                data.index = index;
-                ar.push(new Class(data, parent));
-            });
-            return ar;
-        }
-
-        /**
-         * Function used to instantiate a new object of type Class with data provided by objectData
-         * @public
-         * @function
-         * @name Utils#createObject
-         * @param {function} Class - reference to the "class" the object should be instantiated from
-         * @param {Object} objectData - Data that is passed to the object's constructor
-         * @param {Object} parent - Parent of the object, in most cases this will be the magicast the object belongs to
-         * @param {Number} [index=0] - Object index in xml (Required for triggers so they can be run in the order defined in source data)
-         * @returns {Object} - Object of type ClassName that was passed to the method
-         */
-        function createObject(Class, objectData, parent, index) {
-            if (!objectData) {
-                throw new TypeError("No valid data passed");
-            }
-            // Insert index, default to 0
-            objectData.index = index || 0;
-            return new Class(objectData, parent);
-        }
-
-        /**
          * Converts and array of objects containing key and value to one object containing the key/value pairs.
          * <caption>Example usage:</caption>
          * <code>Utils.convertArrayToKeyValue([{name:"x",value:1},{name:"y",value:2}], "name", "value");</code><br/>
@@ -105,19 +62,33 @@ define(["jquery", "lodash"], function ($, _) {
          * @returns {String} - A proper name that can be used for an object
          */
         function validateName(name, prefix) {
-            var validatedName = "";
-            if (!name) {
-//                validatedName += prefix || "Magicast";
- //               validatedName += Date.now();
-            }
-            else {
-                validatedName = name;
-            }
-
-            validatedName = validatedName.replace(/\s/g, "_");
-
-            return validatedName;
+            name = $.trim(name);
+            name = name.replace(/\s/g, "_");
+            return name;
         }
+		
+		function validatePropertyValue(property, value) {
+			if (property=="visible" ||
+				property=="enablePointer" ||
+				property=="selectable" ||
+				property=="draggable" ||
+				property=="accelerated" ||
+				property=="triggerVisibilityEvents" ||
+				property=="refFrameAnchorX" ||
+				property=="refFrameAnchorY" ||
+				property=="refFrameAnchorScaleX" ||
+				property=="refFrameAnchorScaleY" ||
+				property=="refFrameAnchorRotation" ||
+				property=="refFrameAnchorAlpha" ||
+				false) {
+				return value === "true";
+			};
+			var floatValue = parseFloat(value);	
+			if (!isNaN(floatValue)) {
+				return floatValue;
+			}
+			return value;
+		}		
 
         /**
          * A method used to make an element draggable, can be used on any html element or magicast layer.
@@ -328,34 +299,9 @@ define(["jquery", "lodash"], function ($, _) {
         function convertToCssString(cssObject) {
             var cssString = "";
             _(cssObject).each(function(value, key) {
-                cssString += key + " : " + value + "; ";
+                cssString += key + ": " + value + "; ";
             });
             return cssString;
-        }
-
-        function getBrowserVariants() {
-            return ["", "-webkit-", "-moz-", "-ms-", "-o-"];
-        }
-        /**
-         * Generates CSS variants for transform property
-         * @public
-         * @function
-         * @name Utils#generateTransformVariants
-         * @param {String} type - Transform type (scale, rotate etc.)
-         * @param {String} value - Transform value
-         * @returns {Object} - Object containing CSS properties
-         */
-        function generateTransformVariants(type, value) {
-            var s = "";
-            if (value !== undefined) {
-                s = type + "(" + value + ")";
-            }
-            var obj = {};
-            _.each(getBrowserVariants(), function (i) {
-                var cssProperty = i + "transform";
-                obj[cssProperty] = s;
-            });
-            return obj;
         }
 
         /**
@@ -363,15 +309,14 @@ define(["jquery", "lodash"], function ($, _) {
          * @public
          * @function
          * @name Utils#generateCssVariants
-         * @param {String} cssProperty - CSS property name
-         * @param {String} value - CSS value
-         * @returns {Object} - Object containing CSS properties
+         * @param property {String} CSS property name
+         * @param value {String} CSS value
+         * @returns {Object} CSS properties
          */
-        function generateCssVariants(cssPropertyString, value) {
+        function generateCssVariants(property, value) {
             var obj = {};
-            _.each(getBrowserVariants(), function (i) {
-                var cssProperty = i + cssPropertyString;
-                obj[cssProperty] = value;
+            _.each(["", "-webkit-", "-moz-", "-ms-", "-o-"], function (variant) {
+                obj[variant + property] = value;
             });
             return obj;
         }
@@ -400,16 +345,14 @@ define(["jquery", "lodash"], function ($, _) {
 
         return {
             convertToArray: convertToArray,
-            createObjects: createObjects,
-            createObject: createObject,
             validateName: validateName,
+            validatePropertyValue: validatePropertyValue,
             convertArrayToKeyValue: convertArrayToKeyValue,
             addDragSupport: addDragSupport,
             dispatchEvent: dispatchEvent,
             checkForCollision: checkForCollision,
             delay: delay,
             convertToCssString: convertToCssString,
-            generateTransformVariants: generateTransformVariants,
             generateCssVariants: generateCssVariants,
 			callInOrder: callInOrder
         };

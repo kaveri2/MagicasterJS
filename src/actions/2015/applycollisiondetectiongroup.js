@@ -26,14 +26,14 @@ define(function () {
 
     function applyCollisionDetectionGroup(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/applyCollisionDetectionGroup]", params, magicast);
-		
-		var magicasts = params.layer.magicast ? Magicaster.findMagicastsByName(params.layer.magicast) : [magicast];
-		_.each(magicasts, function(magicast) {
-			var layer = magicast.findLayerByName(params.layer.name);
-			if (layer) {
-				Magicaster.applyCdGroup(params.collisionDetectionGroup, layer);
-			}
-		});
+		var layer = magicast.findLayerByName(magicast.resolveAndGetValue(params.layer, eventArgs));
+		if (layer) {
+			Magicaster.applyCdGroup(magicast, layer, 
+				magicast.resolveAndGetValue(params.global, eventArgs) == "true", 
+				magicast.resolveAndGetValue(params.name, eventArgs), 
+				magicast.resolveAndGetValue(params.source, eventArgs) == "true", 
+				magicast.resolveAndGetValue(params.target, eventArgs) == "true");
+		}
     };
 
     return applyCollisionDetectionGroup;

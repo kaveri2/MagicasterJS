@@ -35,7 +35,7 @@ define(["jquery"], function ($) {
 
 		var $content = layer.getContent();
 		// make the image fit layer's dimensions
-		var $image = $("<img draggable='false'>");
+		var $image = $("<img draggable='false' style='position: absolute'>");
 		$content.append($image);
 		
 		if (data.asset) {

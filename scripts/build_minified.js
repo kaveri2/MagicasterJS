@@ -54,7 +54,7 @@
         "actions/2015/removecssclass",
         "actions/2015/requestfullscreen",
         "actions/2015/sendanalytics",
-        "actions/2015/setcssstyle",
+        "actions/2015/setcsstext",
         "actions/2015/setvariable",
         "actions/2015/triggerevent",
         "components/2015/areena",

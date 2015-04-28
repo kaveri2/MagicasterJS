@@ -28,7 +28,11 @@ define(["jquery"], function ($) {
         Magicaster.console.log("[actions/sendAnalytics]", magicast, params, eventArgs);
 
 		if (Magicaster.configuration.analytics) {
-			Magicaster.configuration.analytics.send(magicast, params.event, params.label, params.value !== undefined ? parseInt(params.value) : undefined);
+			Magicaster.configuration.analytics.send(
+				magicast, 
+				magicast.resolveAndGetValue(params.event, eventArgs), 
+				magicast.resolveAndGetValue(params.label, eventArgs), 
+				params.value ? parseInt(magicast.resolveAndGetValue(params.value, eventArgs)) : undefined);
 		}
     };
 

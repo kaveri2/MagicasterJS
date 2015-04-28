@@ -76,7 +76,9 @@ define(function () {
 
 			capabilities["iOS"] = capabilities["iPad"] || capabilities["iPod"] || capabilities["iPad"];
 			
-			capabilities["video"] = !capabilities["iPad"] && !capabilities["iPod"];
+			capabilities["video"] = !capabilities["iPhone"] && !capabilities["iPod"];
+			
+			capabilities["fullscreen"] = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
 		}
 
         /**

@@ -26,17 +26,10 @@ define(["utils/utils"], function (Utils) {
 
     function removeCssClass(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/removeCssClass]", magicast, params, eventArgs);
-
-        var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [magicast];
-        _.each(magicasts, function (magicast) {
-			var layers = Utils.convertToArray(params, "layer");
-            _(layers).each(function(layer){
-                var l = magicast.findLayerByName(layer);
-                if (l) {
-					l.removeCssClass(params.cssClass);
-                }
-            });
-        });
+		var layer = magicast.findLayerByName(magicast.resolveAndGetValue(params.layer, eventArgs));
+		if (layer) {
+			layer.removeCssClass(magicast.resolveAndGetValue(params.cssClass, eventArgs));
+		}		
     };
 
     return removeCssClass;

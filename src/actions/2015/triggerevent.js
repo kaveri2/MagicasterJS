@@ -24,10 +24,9 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-    function triggerEvent(magicast, parameters, eventArgs) {
-        Magicaster.console.log("[actions/triggerEvent]", parameters, eventArgs, magicast);
-		
-		magicast.resolveAndTriggerEvent(parameters, eventArgs);
+    function triggerEvent(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/triggerEvent]", params, eventArgs, magicast);
+		magicast.resolveAndTriggerEvent(params, eventArgs);
     };
 
     return triggerEvent;

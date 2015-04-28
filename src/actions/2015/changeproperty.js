@@ -27,21 +27,21 @@ define(["utils/utils"], function (Utils) {
 	function changeProperty(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/changeProperty]", magicast, params, eventArgs);
 
-        var magicasts = params.property.magicast ? Magicaster.findMagicastsByName(magicast.resolveAndGetValue(params.property.magicast, eventArgs)) : [magicast];
-        _.each(magicasts, function (magicast) {
-			var l = magicast.findLayerByName(magicast.resolveAndGetValue(params.property.layer, eventArgs));
+		var name = magicast.resolveAndGetValue(params.property.name, eventArgs);
+		var value = magicast.resolveAndGetValue(params.value, eventArgs);
+		var ease = magicast.resolveAndGetValue(params.ease, eventArgs);
+		var time = magicast.resolveAndGetValue(params.time, eventArgs);
+		var callback = params.completeEvent ? function () {
+			magicast.resolveAndTriggerEvent(params.completeEvent, eventArgs);
+		} : null;
+		var magicasts = params.property.magicast ? Magicaster.findMagicastsByName(magicast.resolveAndGetValue(params.property.magicast, eventArgs)) : [magicast];
+		_.each(magicasts, function (m) {
+			var l = m.findLayerByName(magicast.resolveAndGetValue(params.property.layer, eventArgs));
 			if (l) {
-				var name = magicast.resolveAndGetValue(params.property.name, eventArgs);
-				var value = magicast.resolveAndGetValue(params.value, eventArgs);					
-				var ease = magicast.resolveAndGetValue(params.ease, eventArgs);					
-				var time = magicast.resolveAndGetValue(params.time, eventArgs);					
-				var callback = params.completeEvent ? function () {
-					magicast.resolveAndTriggerEvent(params.completeEvent, eventArgs);
-				} : null;
-				magicast.layout.changeProperty(l, name, value, ease, time, callback);
+				m.layout.changeProperty(l, name, value, ease, time, callback);
 			}
-        });
-    };
+		});
+	};
 
     return changeProperty;
 });

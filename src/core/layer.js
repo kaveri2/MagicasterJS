@@ -37,11 +37,59 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
         if (!(this instanceof Layer)) {
             throw new TypeError("Constructor cannot be called as a function.");
         }
+		
+        var self = this;		
 
-        var self = this;
+		/**
+		 * Method for getting value from XML-based value syntax
+		 * @name Layer#resolveAndGetValue
+		 * @public
+		 * @method
+		 * @param data {object} Value syntax data
+		 * @param eventArgs {object} Triggering event's arguments
+		 * @returns {object}
+		 */
+        self.resolveAndGetValue = function (params, eventArgs) {
+            return Magicaster.resolveAndGetValue(magicast, self, params, eventArgs);
+        };
+		
+		/**
+		 * Method for triggering event, only on this layer.
+		 * @name Layer#triggerEvent
+		 * @public
+		 * @method
+		 * @param name {sting} Event name
+		 * @param args {object} Event argument
+		 */		
+        self.triggerEvent = function (name, args) {
+            return Magicaster.triggerEvent(magicast, self, name, args);
+        };
+		
+		/**
+		 * Method for triggering event using XML-based event syntax.
+		 * @name Layer#resolveAndTriggerEvent
+		 * @public
+		 * @method
+		 * @param data {object} Event syntax data
+		 */		
+        self.resolveAndTriggerEvent = function (params) {
+            return Magicaster.resolveAndTriggerEvent(magicast, self, params);
+        };
+		
+		/**
+		 * Method for binding to events using XML-based event syntax.
+		 * @name Layer#resolveAndBindEventListener
+		 * @public
+		 * @method
+		 * @param data {object} Event syntax data
+		 * @param callback {function} Called when event happens
+		 */		
+        self.resolveAndBindEventListener = function (params, callback) {
+            return Magicaster.resolveAndBindEventListener(magicast, self, params, callback);
+        };		
+		
         self.index = Magicaster.getObjectIndex();
-        // Validate name
-        self.name = Utils.validateName(data.name, "Layer");
+        self.name = Utils.validateName(self.resolveAndGetValue(data.name), "Layer");
 		
 		self.getMagicast = function() {
 			return magicast;
@@ -92,9 +140,48 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 
         // Layer properties are defined within Magicast definition (XML) and they are not changed
         // by the layout manager/layer
-        var properties = Utils.convertToArray(data, "property");
-        _.each(properties, function (property) {
-            properties[property.name] = magicast.resolveAndGetValue(property.value);
+        var properties = {};
+        _.each(Utils.convertToArray(data, "property"), function (property) {
+            properties[magicast.resolveAndGetValue(property.name)] = magicast.resolveAndGetValue(property.value);
+        });
+		
+		_(properties).each(function(value, property) {
+			properties[property] = Utils.validatePropertyValue(property, value);
+		});
+		
+        // Default layer properties
+        _.defaults(properties, {
+            rotation: 0,
+            skewX: 0,
+            skewY: 0,
+            scaleX: 100,
+            scaleY: 100,
+            alpha: 100,
+            moveX: 0,
+            moveY: 0,
+            absX: undefined,
+            absY: undefined,
+            relX: undefined,
+            relY: undefined,
+            selfRelX: undefined,
+            selfRelY: undefined,
+            absReferenceX: undefined,
+            absReferenceY: undefined,
+            relReferenceX: undefined,
+            relReferenceY: undefined,
+            maintainAspectRatio: true,
+            aspectRatio: undefined,
+			refFrameAnchorX: true,
+			refFrameAnchorY: true,
+			refFrameAnchorScaleX: true,
+			refFrameAnchorScaleY: true,
+			refFrameAnchorRotation: true,
+			refFrameAnchorAlpha: true,
+			visible: true,
+			draggable: false,
+			enablePointer: true,
+			accelerated: false,
+			selectable: false
         });
 		
 		/**
@@ -106,41 +193,8 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 		 */
 		self.getProperties = function() {
 			return properties;
-		};
-
-        // Default layer properties
-        _.defaults(properties, {
-            rotation: 0,
-            skewX: 0,
-            skewY: 0,
-            scaleX: 100,
-            scaleY: 100,
-            alpha: 100,
-            dragX: 0,
-            dragY: 0,
-            dragBounds: "",
-            absX: undefined,
-            absY: undefined,
-            relX: undefined,
-            relY: undefined,
-            selfRelX: undefined,
-            selfRelY: undefined,
-            absReferenceX: undefined,
-            absReferenceY: undefined,
-            relReferenceX: undefined,
-            relReferenceY: undefined,
-            maintainAspectRatio: undefined,
-            mask: undefined,
-            aspectRatio: undefined
-        });
-
-        _.extend(properties, {
-            visible: properties.visible !== "false",
-            draggable: properties.draggable === "true",
-            enablePointer: properties.enablePointer !== "false",
-            accelerated: properties.accelerated === "true"
-        });
-
+		};			
+		
         // Layer's calculations are run-time calculated values mainly by layout manager
         var calculations = {};
 		/**
@@ -187,7 +241,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
         self.transforms = {};
 
         // Asynchronously loads required component JavaScript using RequireJS methods
-        function initializeComponent(asset, parameters) {
+        function initializeComponent(asset, params) {
 		
             Magicaster.console.log("[Layer] initializeComponent", asset);
 
@@ -197,7 +251,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
             function componentFound(Component) {
                 if (Component) {
 				
-                    component = new Component(parameters, self);
+                    component = new Component(params, self);
 
                     // Check the component requirements
                     var requirements = component.getRequirements ? component.getRequirements() : [];
@@ -374,15 +428,15 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
         };
 
         /**
-         * Adds given CSS styles to the content element.
+         * Adds given CSS text to the content element.
          * @name Layer#setCssStyle
 		 * @public
          * @method
-		 * @param styles {Object} CSS style definition object
+		 * @param cssText {Object} CSS style definition object
          */
-        self.setCssStyle = function (cssStyle) {
-			Magicaster.console.log("[Layer] setCssStyle", self, cssStyle);
-			$content.attr("style", cssStyle);
+        self.setCssText = function (cssText) {
+			Magicaster.console.log("[Layer] setCssText", self, cssText);
+			$content.css('cssText', $content.css('cssText') + ";" + cssText);
         };	
 
 		var started = false;
@@ -426,84 +480,6 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 			 */
 			Utils.dispatchEvent("magicaster_layerStarted", {"layer": self, "magicast": magicast}, magicast.$root[0]);
         };
-
-		/**
-		 * Method for getting value from XML-based value syntax
-		 * @name Layer#resolveAndGetValue
-		 * @public
-		 * @method
-		 * @param data {object} Value syntax data
-		 * @param eventArgs {object} Triggering event's arguments
-		 * @returns {object}
-		 */
-        self.resolveAndGetValue = function (params, eventArgs) {
-            return Magicaster.resolveAndGetValue(magicast, self, params, eventArgs);
-        };
-		/**
-		 * Method for getting variable from XML-based variable syntax
-		 * @name Layer#resolveAndGetVariable
-		 * @public
-		 * @method
-		 * @param data {object} Variable syntax data
-		 * @returns {object}
-		 */
-        self.resolveAndGetVariable = function (params) {
-            return Magicaster.resolveAndGetVariable(magicast, params);
-        };
-		/**
-		 * Method for getting property from XML-based property syntax
-		 * @name Layer#resolveAndGetProperty
-		 * @public
-		 * @method
-		 * @param data {object} Property syntax data
-		 * @returns {object}
-		 */
-        self.resolveAndGetProperty = function (params) {
-            return Magicaster.resolveAndGetProperty(magicast, self, params);
-        };
-		/**
-		 * Method for setting variable from XML-based variable syntax
-		 * @name Layer#resolveAndSetVariable
-		 * @public
-		 * @method
-		 * @param data {object} Variable syntax data
-		 * @param value {object} Value
-		 */		
-        self.resolveAndSetVariable = function (params, value) {
-            return Magicaster.resolveAndSetVariable(magicast, params, value);
-        };
-		/**
-		 * Method for triggering event, only on this layer.
-		 * @name Layer#triggerEvent
-		 * @public
-		 * @method
-		 * @param name {sting} Event name
-		 * @param args {object} Event argument
-		 */		
-        self.triggerEvent = function (name, args) {
-            return Magicaster.triggerEvent(magicast, self, name, args);
-        };
-		/**
-		 * Method for triggering event using XML-based event syntax.
-		 * @name Layer#resolveAndTriggerEvent
-		 * @public
-		 * @method
-		 * @param data {object} Event syntax data
-		 */		
-        self.resolveAndTriggerEvent = function (params) {
-            return Magicaster.resolveAndTriggerEvent(magicast, self, params);
-        };
-		/**
-		 * Method for binding to events using XML-based event syntax.
-		 * @name Layer#resolveAndBindEventListener
-		 * @public
-		 * @method
-		 * @param data {object} Event syntax data
-		 * @param callback {function} Called when event happens
-		 */		
-        self.resolveAndBindEventListener = function (params, callback) {
-            return Magicaster.resolveAndBindEventListener(magicast, self, params, callback);
-        };
 		
 		var $clipper = $("<div class='magicaster-magicast-layer-clipper'></div>")
 			.attr({
@@ -517,41 +493,33 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 				"transform-origin": "0px 0px"
 			});
 			
-		var $container = $("<div class='magicaster-magicast-layer-container' data-type='layer'></div>")
-			.attr({
-				name: self.name
-			})
-			.css({
-				position: "absolute",
-				"box-sizing": "border-box",
-				"-webkit-box-sizing": "border-box",
-				"-moz-box-sizing": "border-box",
-				"pointer-events": "auto",
-//				"visibility": "hidden",
-				"white-space": "nowrap"
-			});
+		var $container = $("<div class='magicaster-magicast-layer-container' data-type='layer'></div>").attr({name: self.name});
 		$clipper.append($container);
 		
 		var $content = $("<div class='magicaster-magicast-layer-content'></div>");
 		$container.append($content);
 
 		$container.on("click", function () {
-			self.triggerEvent("click");
+			self.triggerEvent("click", {"layer": self.name});
 		});
 	
 		Utils.addDragSupport($container[0], $container[0], self, false);
 
 		Utils.convertToArray(data, "collisionDetectionGroup").forEach(function (cdGroup) {
-			Magicaster.applyCdGroup(cdGroup, self);
+			Magicaster.applyCdGroup(magicast, self, 
+					self.resolveAndGetValue(cdGroup.global) == "true", 
+					self.resolveAndGetValue(cdGroup.name), 
+					self.resolveAndGetValue(cdGroup.source) == "true", 
+					self.resolveAndGetValue(cdGroup.target) == "true");
 		});
 		
 		// Add CSS classes and styles possibly defined in XML
 		if (data.css) {
 			if (data.css.class) {
-				self.addCssClass(data.css.class);
+				self.addCssClass(self.resolveAndGetValue(data.css.class));
 			}
 			if (data.css.style) {
-				self.setCssStyle(data.css.style);
+				self.setCssStyle(self.resolveAndGetValue(data.css.style));
 			}
 		}		
 

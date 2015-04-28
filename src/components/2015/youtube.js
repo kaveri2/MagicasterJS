@@ -41,16 +41,21 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		var $container = $('<div><div></div></div>');
 		$content.append($container);
 		
-		var videoId = data.videoId;
-		var startTime = data.startTime !== undefined ? parseFloat(data.startTime) : undefined;
-		var endTime = data.endTime !== undefined ? parseFloat(data.endTime) : undefined;
-		var controls = data.controls === "true";
+		var videoId = layer.resolveAndGetValue(data.videoId);
+		var startTime = data.startTime !== undefined ? parseFloat(layer.resolveAndGetValue(data.startTime)) : undefined;
+		var endTime = data.endTime !== undefined ? parseFloat(layer.resolveAndGetValue(data.endTime)) : undefined;
+		var controls = layer.resolveAndGetValue(data.controls) == "true";
 		var cue = Utils.convertToArray(data, "cue");
-		var loop = data.loop === "true";
-		var preview = data.preview !== "false";
-		var paused = data.paused === "true";
-		var volume = data.volume !== undefined ? parseFloat(data.volume) : 100;
-		var disablekb = data.disablekb !== "false";
+		_.each(cue, function (cue) {
+			cue.time = parseFloat(layer.resolveAndGetValue(cue.time));
+			cue.name = layer.resolveAndGetValue(cue.name);
+			cue.triggered = false;
+		});
+		var loop = layer.resolveAndGetValue(data.loop) == "true";
+		var preview = layer.resolveAndGetValue(data.preview) != "false";
+		var paused = layer.resolveAndGetValue(data.paused) == "true";
+		var volume = data.volume !== undefined ? parseFloat(layer.resolveAndGetValue(data.volume)) : 100;
+		var disablekb = layer.resolveAndGetValue(data.disablekb) != "false";
 		
 		var manualPlay = false;
 		var manualPause = false;
@@ -169,7 +174,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 //			Magicaster.console.log("[YouTube] tick", time);
 			time = player.getCurrentTime();
 			_.each(cue, function (cue) {
-				if (time > parseFloat(cue.time) && !cue.triggered) {
+				if (time > cue.time && !cue.triggered) {
 					if (cue.name) {
 						var args = {
 							'time': time,

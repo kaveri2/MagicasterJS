@@ -82,6 +82,14 @@ define(["jquery",
             var cssRules;
             var nodes;
 			
+			self.getId = function() {
+				return self.id || 0; 
+			}
+
+			self.getName = function() {
+				return self.name || ""; 
+			}			
+			
 			var styles = [];
 			
 			var properties = {};
@@ -91,7 +99,7 @@ define(["jquery",
 			};
 
             var node = null;
-			var oldNode = null;
+			var nextNode = null;
 			
             var layers = [];
 			self.getLayers = function() {
@@ -106,7 +114,33 @@ define(["jquery",
 			var oldTriggers = [];
 
             var variables = {};
-
+            /**
+             * Gets variable value
+             * @public
+             * @function
+             * @name Magicast#getVariable
+             * @param name Name of the variable to get
+             * @returns {*}
+             */
+            self.getVariable = function (name) {
+                name = $.trim(name);
+                var value = variables[name];
+                log("[Magicast] getVariable", name, value);
+                return value;
+            };
+            /**
+             * Sets variable for Magicast
+             * @public
+             * @function
+             * @name Magicast#setVariable
+             * @param name Name of the variable
+             * @param value New value
+             */
+            self.setVariable = function (name, value) {
+                log("[Magicast] setVariable", name, value);
+                variables[name] = value;
+            };
+			
             /**
              * Magicast's jQuery root element. This is placed within the container defined
              * in the containing HTML file by the designer.
@@ -134,7 +168,7 @@ define(["jquery",
              * @type {jQuery}
              */
             self.$viewport = $(container).find('.magicaster-magicast-viewport');
-
+			
             //
             // LOCAL FUNCTIONS
             //
@@ -148,17 +182,16 @@ define(["jquery",
 
                 var d = $.Deferred();
 
-                self.debug = data.debug === "true" || false;
-                self.performance = data.performance === "true" || false;
-                self.name = Utils.validateName(data.name, "Magicast");
+                self.debug = self.resolveAndGetValue(data.debug) == "true";
+                self.performance = self.resolveAndGetValue(data.performance) == "true";
+                self.name = Utils.validateName(self.resolveAndGetValue(data.name), "Magicast");
 
                 if (data.minWidth || data.maxWidth || data.minHeight || data.maxHeight) {
-                    var pf = parseFloat;
                     self.scalingDims = {
-                        minw: pf(data.minWidth),
-                        maxw: pf(data.maxWidth),
-                        minh: pf(data.minHeight),
-                        maxh: pf(data.maxHeight)
+                        minWidth: parseFloat(self.resolveAndGetValue(data.minWidth)),
+                        maxWidth: parseFloat(self.resolveAndGetValue(data.maxWidth)),
+                        minHeight: parseFloat(self.resolveAndGetValue(data.minHeight)),
+                        maxHeight: parseFloat(self.resolveAndGetValue(data.maxHeight))
                     };
                 }
 
@@ -258,8 +291,8 @@ define(["jquery",
                 return foundElement;
             }
 
-            function showStatus(type, parameters) {
-                Magicaster.showStatus(self, self.$root[0], type, parameters);
+            function showStatus(type, params) {
+                Magicaster.showStatus(self, self.$root[0], type, params);
             }
 
             function hideStatus(type) {
@@ -296,24 +329,26 @@ define(["jquery",
                 // Already existing layers are preserved (identified by the name)
                 // EXCEPT IF the overwrite flag is turned on. In that case layer is re-created.
                 data.forEach(function (layerData, index) {
-                    var overwrite = layerData.overwrite || "false";
-
-                    if (!refresh && overwrite === "false") {
+                    var overwrite = self.resolveAndGetValue(layerData.overwrite) == "true";
+					var layer;
+                    if (!refresh && !overwrite) {
                         // check if layer exists and move it to new node
-                        var existingLayer = findAndRemoveElementByName(layers, Utils.validateName(layerData.name, "Layer"));
-                        if (existingLayer) {
-                            log("[Magicast] found existing layer", existingLayer);
-                            newLayers.push(existingLayer);
+                        layer = findAndRemoveElementByName(layers, Utils.validateName(self.resolveAndGetValue(layerData.name), "Layer"));
+                        if (layer) {
+                            log("[Magicast] found existing layer", layer);
                         }
                         else {
                             log("[Magicast] Creating new layer", layerData);
-                            newLayers.push(Utils.createObject(Layer, layerData, self, index));
+							layer = new Layer(layerData, self);
                         }
                     }
                     else {  // overwrite === true -- always create a new layer
                         log("[Magicast] Creating new layer", layerData);
-                        newLayers.push(Utils.createObject(Layer, layerData, self, index));
+						layer = new Layer(layerData, self);
                     }
+					if (layer) {
+						newLayers.push(layer);
+					}
                 });
 
 				// add new layers to DOM
@@ -342,70 +377,34 @@ define(["jquery",
                 // Already existing triggers are preserved (identified by the name)
                 // EXCEPT IF the overwrite flag is turned on. In that case trigger is re-created.
                 data.forEach(function (triggerData, index) {
-                    var overwrite = triggerData.overwrite || "false";
-
-                    if (!refresh && overwrite === "false") {
-                        var existingTrigger = findAndRemoveElementByName(triggers, Utils.validateName(triggerData.name, "Layer"));
-                        if (existingTrigger) {
-                            log("[Magicast] Found existing trigger", existingTrigger);
-                            existingTrigger.setIndex(index);
-                            newTriggers.push(existingTrigger);
+                    var overwrite = self.resolveAndGetValue(triggerData.overwrite) == "true";
+					var trigger;
+                    if (!refresh && !overwrite) {
+                        trigger = findAndRemoveElementByName(triggers, Utils.validateName(self.resolveAndGetValue(triggerData.name), "Layer"));
+                        if (trigger) {
+                            log("[Magicast] Found existing trigger", trigger);
                         }
                         else {
                             log("[Magicast] Creating new trigger", triggerData);
-                            newTriggers.push(Utils.createObject(Trigger, triggerData, self, index));
+							trigger = new Trigger(triggerData, self);
                         }
                     }
                     else {  // overwrite === true -- anyway create a new trigger
                         log("[Magicast] Overwriting existing trigger", triggerData);
-                        newTriggers.push(Utils.createObject(Trigger, triggerData, self, index));
+						trigger = new Trigger(triggerData, self);
                     }
+					if (trigger) {
+						trigger.setIndex(index);
+						newTriggers.push(trigger);
+					}
                 });				
 
 				oldTriggers = triggers;
                 triggers = newTriggers;
             };
 
-            /**
-             * Sets variable for Magicast
-             * @public
-             * @function
-             * @name Magicast#setVariable
-             * @param name Name of the variable
-             * @param value New value
-             */
-            self.setVariable = function (name, value) {
-                name = $.trim(name);
-                log("[Magicast] setVariable", name, value);
-                variables[name] = value;
-            };
-
-            /**
-             * Gets variable value
-             * @public
-             * @function
-             * @name Magicast#getVariable
-             * @param name Name of the variable to get
-             * @returns {*}
-             */
-            self.getVariable = function (name) {
-                name = $.trim(name);
-                var value = variables[name];
-                log("[Magicast] getVariable", name, value);
-                return value;
-            };
-
             self.resolveAndGetValue = function (params, eventArgs) {
                 return Magicaster.resolveAndGetValue(self, null, params, eventArgs);
-            };
-            self.resolveAndGetVariable = function (params) {
-                return Magicaster.resolveAndGetVariable(self, params);
-            };
-            self.resolveAndGetProperty = function (params) {
-                return Magicaster.resolveAndGetProperty(self, null, params);
-            };
-            self.resolveAndSetVariable = function (params, value) {
-                return Magicaster.resolveAndSetVariable(self, params, value);
             };
             self.triggerEvent = function (name, args) {
                 return Magicaster.triggerEvent(self, null, name, args);
@@ -421,30 +420,43 @@ define(["jquery",
              * Change node
              * @param name Name of the node
              */
+			var nodeChanging = false;
             self.changeNode = function (name, refresh) {
-			
-				Magicaster.console.log("[Magicast] changeNode", name);
+						
+				Magicaster.console.log("[Magicast] changeNode", node, name, nodeChanging, nextNode);
 
                 var d = $.Deferred();
+
+				if (name == "") {
+					name = nodes[0].name;
+				} else {
+					name = Utils.validateName(name, "Node");
+				}
 				
-				if (oldNode || (!refresh && node == name)) {
+				// return if changing to current node
+				if (node == name) {
+					console.log("[Magicast] changeNode to current node!");
 					d.resolve();
 					return d.promise();
-				}				
-				
-				var data;
-				if (name == "") {
-					data = nodes[0];
-				} else {
-					data = _.find(nodes, {name: name});
 				}
+
+				// return if node is already changing
+				if (nodeChanging) {
+					nextNode = name;
+					d.resolve();
+					return d.promise();
+				}
+				
+				nextNode = null;
+				
+				var data = _.find(nodes, {name: name});
 				
                 if (data) {
 				
 					showStatus('changingNode');
-				
-					oldNode = node;
-					node = Utils.validateName(data.name, "Node");
+					
+					nodeChanging = true;
+					node = Utils.validateName(self.resolveAndGetValue(data.name), "Node");
 				
 					var newProperties = Utils.convertToArray(data, "property");
 					
@@ -463,11 +475,9 @@ define(["jquery",
 							
 						 hideStatus('changingNode').done(function () {
 						 
-							oldNode = null;
-						 
 							// update new properties
 							_(newProperties).each(function(newProperty) {
-								properties[newProperty.name] = self.resolveAndGetValue(newProperty.value);
+								properties[self.resolveAndGetValue(newProperty.name)] = self.resolveAndGetValue(newProperty.value);
 							});
 							
 							// remove old layers
@@ -495,9 +505,9 @@ define(["jquery",
 								layer.start();
 							});
 							
-							// start triggers
+							// Bind trigger event listeners
 							_(triggers).each(function (trigger) {
-								trigger.start();
+								trigger.bindEventListeners();
 							});
 
 							startDeferred.resolve();
@@ -520,7 +530,7 @@ define(["jquery",
                             }
 
 							if (Magicaster.configuration.analytics) {
-								Magicaster.configuration.analytics.send(magicast, "nodeChanged", node.name);
+								Magicaster.configuration.analytics.send(self, "nodeChanged", self.resolveAndGetValue(data.name));
 							}
 
                             // Fire public nodeChanged event
@@ -539,10 +549,23 @@ define(["jquery",
                              */
                             Utils.dispatchEvent("magicaster_magicastNodeChanged", eventData, magicastElem);
 
-							// request layout update
-                            self.layout.dirty();							
-	
+							// Start triggers
+							_(triggers).each(function (trigger) {
+								trigger.start();
+							});
+
+							// Update layout
+                            self.layout.dirty();
+							self.layout.update();
+							
 							d.resolve();
+							
+							nodeChanging = false;
+							
+							// if immediate node change was requested
+							if (nextNode) {
+								self.changeNode(nextNode);
+							}
 							
 						});
 					
@@ -620,7 +643,7 @@ define(["jquery",
 
                 showStatus('loading');
 
-                Magicaster.server.callMethod('Magicast.get', { 'id': magicast.id, 'check': magicast.check })
+                Magicaster.server.callMethod('Magicast.get', {'id': magicast.id, 'check': magicast.check})
                     .done(function (response) {
                         showStatus('loaded');
 						
@@ -676,11 +699,11 @@ define(["jquery",
 						var a = [];
 						_(fonts).each(function (font) {
 							var config;
-							switch (font.source) {
+							switch (self.resolveAndGetValue(font.source)) {
 								case "google":
 									config = {
 										google: {
-											families: [font.family]
+											families: [self.resolveAndGetValue(font.family)]
 										}
 									};
 									break;
@@ -773,6 +796,11 @@ define(["jquery",
 							$style.text("#magicaster-magicast-" + self.index  + " " + cssRule.selector + "{" + cssRule.declaration  + "}");
 							styles.push($style);
 						});	
+						
+						// fix node names
+						_(nodes).each(function (node) {
+							node.name = Utils.validateName(self.resolveAndGetValue(node.name), "Node");
+						});
 					
 						// start with the first node
 						if (nodes.length) {

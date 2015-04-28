@@ -31,29 +31,28 @@ define(["jquery"], function ($) {
 		var self = this;
 		
 		var $content = layer.getContent();
-		var $wrapper = $("<div></div>");
-		$content.append($wrapper);
 		var $text = $("<span></span>");
-		$wrapper.append($text);
+		$content.append($text);
 		
-		var scale = data.scale;
+		var scale = layer.resolveAndGetValue(data.scale);
 		if (scale == "true") scale = "both";
 		if (!scale || scale == "false") scale = "none";
-		var wordWrap = data.wordWrap === "true";
-		var clip = data.clip !== "false";
+		var wordWrap = layer.resolveAndGetValue(data.wordWrap) === "true";
+		var clip = layer.resolveAndGetValue(data.clip) !== "false";
 
-		var color = data.color;
-		var fontFamily = data.fontFamily;
-		var fontSize = data.fontSize;
-		var align = data.align;
-		var lineHeight = data.lineHeight;
-		var letterSpacing = data.letterSpacing;
-		var decoration = data.decoration;
+		var color = layer.resolveAndGetValue(data.color);
+		var fontFamily = layer.resolveAndGetValue(data.fontFamily);
+		var fontSize = layer.resolveAndGetValue(data.fontSize);
+		var align = layer.resolveAndGetValue(data.align);
+		var lineHeight = layer.resolveAndGetValue(data.lineHeight);
+		var letterSpacing = layer.resolveAndGetValue(data.letterSpacing);
+		var decoration = layer.resolveAndGetValue(data.decoration);
 		
-		$wrapper.css({
+		$content.css({
+			"position": "relative",
+			"overflow": clip ? "hidden" : "visible",
 			"width": "100%",
 			"height": "100%",
-			"overflow": clip ? "hidden" : "visible"
 		});
 		
 		var nativeGeometry;
@@ -63,7 +62,7 @@ define(["jquery"], function ($) {
 				"display": "inline-block",
 				"white-space": "pre",
 				"font-family": (fontFamily ? fontFamily : "inherit"),
-				"font-size": (fontSize ? "" + fontSize + "px" : "inherit"),
+				"font-size": (fontSize ? "" + fontSize : "inherit"),
 				"color": (color ? "" + color : "inherit"),
 				"line-height": (lineHeight ? "" + lineHeight : "inherit"),
 				"text-align": (align ? "" + align : "inherit"),
@@ -81,13 +80,14 @@ define(["jquery"], function ($) {
 			};
 			nativeAspectRatio = nativeGeometry.width / nativeGeometry.height;
 			$text.css({
+				"position": "absolute",
 				"display": "inline-block",
 				"white-space": (wordWrap ? "pre-wrap" : "pre"),
 				"font-family": (fontFamily ? fontFamily : "inherit"),
 				"font-size": (fontSize ? "" + fontSize + "px" : "inherit"),
 				"color": (color ? "" + color : "inherit"),
 				"line-height": (lineHeight ? "" + lineHeight : "inherit"),
-				"text-align": (align ? "" + align : "inherit"),
+				"align": (align ? "" + align : "inherit"),
 				"letter-spacing": (letterSpacing ? "" + letterSpacing : "inherit"),
 				"decoration": (decoration ? "" + decoration : "inherit")
 			});
@@ -103,7 +103,7 @@ define(["jquery"], function ($) {
 			
 			if (wordWrap) {
 				var ratio = (width !==undefined && height !== undefined ? width / height : (aspectRatio ? aspectRatio : undefined));
-				// use clever width adjustment if wider than target
+				// use clever width adjustment if native shape is wider than target shape
 				if (ratio && ratio < nativeAspectRatio && scale !== "none" && scale !== "up") {
 					var attempts = 0;
 					var low = ratio / nativeAspectRatio;
@@ -147,7 +147,7 @@ define(["jquery"], function ($) {
 				(scale == "down" && (height!=undefined && geometry.height > height))) {
 				scaleY = true;
 			}
-			
+						
 			// maybe lie to magicast that text already fits the requested dimensions
 			layer.setGeometry({
 				width: (scaleX ? geometry.width : (width ? width : nativeGeometry.width)),

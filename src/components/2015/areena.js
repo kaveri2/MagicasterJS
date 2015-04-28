@@ -43,15 +43,15 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		var $container = $('<div></div>');
 		$content.append($container);
 		
-		var id = data.id;
+		var id = layer.resolveAndGetValue(data.id);
 		var startTime = data.startTime !== undefined ? parseFloat(data.startTime) : undefined;
 		var endTime = data.endTime !== undefined ? parseFloat(data.endTime) : undefined;
-		var controls = data.controls !== "false";
+		var controls = layer.resolveAndGetValue(data.controls) !== "false";
 		var cue = Utils.convertToArray(data, "cue");
-		var loop = data.loop === "true";
-		var preview = data.preview !== "false";
-		var paused = data.paused === "true";
-		var volume = data.volume !== undefined ? parseFloat(data.volume) : 100;
+		var loop = layer.resolveAndGetValue(data.loop) == "true";
+		var preview = layer.resolveAndGetValue(data.preview) != "false";
+		var paused = layer.resolveAndGetValue(data.paused) == "true";
+		var volume = data.volume !== undefined ? parseFloat(layer.resolveAndGetValue(data.volume)) : 100;
 				
 		var manualPlay = false;
 		var manualPause = false;

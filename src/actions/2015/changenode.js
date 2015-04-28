@@ -26,16 +26,7 @@ define(["jquery"], function ($) {
 
     function changeNode(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/changeNode]", magicast, params, eventArgs);
-
-		var name = "";
-		if (params.option) {
-			Magicaster.console.log("Deprecated syntax!", params);
-			name = params.option.name;
-		} else {
-			name = magicast.resolveAndGetValue(params.value, eventArgs);
-		}
-
-		magicast.changeNode(name);
+		magicast.changeNode(magicast.resolveAndGetValue(params.value, eventArgs));
     };
 
     return changeNode;

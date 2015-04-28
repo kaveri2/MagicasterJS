@@ -25,9 +25,8 @@ define(["utils/utils"], function (Utils) {
     "use strict";
 
     function openBrowser(magicast, params, eventArgs) {
-        Magicaster.console.log("[actions/openBrowser]", magicast, params, eventArgs);
-		
-		window.open(magicast.resolveAndGetValue(params.url), magicast.resolveAndGetValue(params.target));
+        Magicaster.console.log("[actions/openBrowser]", magicast, params, eventArgs);		
+		window.open(magicast.resolveAndGetValue(params.url, eventArgs), magicast.resolveAndGetValue(params.target, eventArgs));
     };
 
     return openBrowser;

@@ -94,139 +94,6 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 		self.dirty = function() {
 			dirty = true;
 		}
-		
-        /**
-         *
-         * Property mappings to convert layer properties to css, to support a new property, add a new function with the property name
-         */
-        var propertyMappings = {
-            width: function (value, layer) {
-                return {width: value + "px"};
-            },
-            height: function (value, layer) {
-                return {height: value + "px"};
-            },
-            x: function (value, layer) {
-                return {left: value + "px"};
-                //layer.transforms.translateX = value;
-                //return Utils.generateTransformVariants("translateX", value + "px");
-            },
-
-            y: function (value, layer) {
-                return {top: value + "px"};
-                //layer.transforms.translateY = value;
-                //return Utils.generateTransformVariants("translateY", value + "px");
-            },
-            scaleX: function (value, layer) {
-                layer.transforms.scaleX = value;
-                var obj = generateTransforms("scaleX", value);
-                return obj;
-            },
-            scaleY: function (value, layer) {
-                layer.transforms.scaleY = value;
-                var obj = generateTransforms("scaleY", value);
-                return obj;
-            },
-            rotation: function (value, layer) {
-                layer.transforms.rotate = value;
-                return generateTransforms("rotate", value + "deg");
-            },
-            alpha: function (value, layer) {
-                return {opacity: value};
-            },
-            visible: function (value, layer) {
-                var vis = value === true || value === "true" ? "visible" : "hidden";
-                return {visibility: vis};
-            },
-            enablePointer: function (value, layer) {
-                var val = value === true || value === "true" ? "auto" : "none";
-                return {"pointer-events": val};
-            },
-            accelerated: function (value, layer) {
-                if (value) {
-                    return Utils.generateTransformVariants("translateZ", "0");
-                }
-
-            },
-            mask: function (value, layer) {
-                //TODO: Implement handling of mask layer, should change layerClip size to match the size of layer that is passed as value
-                return {};
-            } ,
-            transformOrigin: function (value, layer) {
-                return Utils.generateCssVariants("transform-origin", value);
-            },
-			cursor: function (value, layer) {
-				return {"cursor": value};
-			},
-			selectable: function (value, layer) {
-                var val = value === true || value === "true" ? "all" : "none";
-				return {
-					"-webkit-user-select": val,
-					"-khtml-user-select": val,
-					"-moz-user-select": val,
-					"-o-user-select": val,
-					"user-select": val
-				};
-			}
-        };
-
-        /**
-         * Converts a layer's properties to matching css styles using the propertyMappings object defined in layout
-         * @param layer
-         * @param properties
-         * @returns Object css object containing all the calculated styles for a layer
-         */
-
-        function convertToCss(layer) {
-            var css = {};
-            var properties = {};
-			
-			var layerGeometry = layer.getGeometry();
-			var layerProperties = layer.getProperties();
-			var layerCalculations = layer.getCalculations();
-
-			var scaleX = (layerCalculations.width / layerGeometry.width);
-			var scaleY = (layerCalculations.height / layerGeometry.height);
-						
-            var additionalProperties = {
-                //"accelerated": true,     // Apply HW acceleration by default to the layer
-                "transformOrigin": (layerCalculations.referenceX) + "px " + (layerCalculations.referenceY) + "px",
-
-				// override properties and calculations for scaling
-				"width": layerGeometry.width,
-				"height": layerGeometry.height,
-				"scaleX": layerCalculations.scaleX * scaleX,
-				"scaleY": layerCalculations.scaleY * scaleY,
-				"x": layerCalculations.x - (layerCalculations.referenceX),
-				"y": layerCalculations.y - (layerCalculations.referenceY)
-            };
-
-            _(properties).extend(layerProperties).extend(layerCalculations).extend(additionalProperties);
-
-            _(propertyMappings).each(function(key, value) {
-                if (properties[value] !== undefined) {
-                    var cssProperty = propertyMappings[value](properties[value], layer);
-                    var exists = false;
-                    _.each(_.keys(cssProperty), function (key) {
-                        if (_.contains(_.keys(css), (key))) {
-                            exists = true;
-                            css[key] += " " + cssProperty[key];
-                        }
-                    });
-                    if (!exists) {
-                        css = _.extend(css, cssProperty);
-                    }
-                }
-            });
-
-            var cssString = "";
-            _(css).each(function(value, key) {
-                cssString += key + " : " + value + "; ";
-            });
-			
-            return cssString;
-        }
-
 
         /**
          * Updates a layers property, called by changeProperty action
@@ -236,23 +103,14 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
          */
         self.changeProperty = function (layer, property, value, ease, time, callback) {
 			
-			var layerProperties = layer.getProperties();
-
-			// boolean properties
-			if (property=="visible" ||
-				property=="enablePointer" ||
-				property=="selectable" ||
-				property=="draggable" ||
-				property=="accelerated" ||
-				property=="triggerVisibilityEvents" ||
-				false) {
-				value = value === "true";
-			};
+			var target = layer || magicast;			
+			var targetProperties = target.getProperties();
 			
-			// if property is not float, change immediately
-			var floatValue = parseFloat(value);			
-			if (isNaN(floatValue)) {
-				layerProperties[property] = value;
+			value = Utils.validatePropertyValue(property, value);
+
+			// if property is not number, it can't be animated
+			if (isNaN(value)) {
+				targetProperties[property] = value;
                 dirty = true;
 				if (callback) {
 					callback();
@@ -261,8 +119,7 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 			}
 			
 			// proceed to animation...
-
-            layer.animations = layer.animations || {};
+            target.animations = target.animations || {};
 
             var transition = {
                 easing: ease,
@@ -282,9 +139,9 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 
             //if no custom handling is needed for a property we just calculate the changes, convert it to css and pass that to animate
             else {
-                startValue = parseInt(layerProperties[property], 10);
+                startValue = targetProperties[property] || 0;
                 transition.step = function (now) {
-                    layerProperties[property] = now;
+                    targetProperties[property] = now;
                 };
             }
 
@@ -295,11 +152,11 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 
             var cf = callback ? callback : $.noop;
 
-            var ignore = layer.animations[property] && layer.animations[property].stop();
+            var ignore = target.animations[property] && target.animations[property].stop();
 
             var anim = $.ease(
                 startValue || 0,
-                floatValue,
+                value,
                 transition.duration,
                 transition.easing,
                 ts,
@@ -307,7 +164,7 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             );
 
             // Stored only to avoid duplicate overlapping animations.
-            layer.animations[property] = anim;
+            target.animations[property] = anim;
         };
 		
 		self.stopAnimations = function (layer) {
@@ -340,36 +197,46 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             layer.parentHeight = $lcp[0].clientHeight;
 			
             var layerProperties = layer.getProperties();
-            var layerCalcs = layer.getCalculations();
+            var layerCalculations = layer.getCalculations();
+			var layerComponent = layer.getComponent();
 			
 			var refFrameLayer = null;
-			var refFrameLayerProperties = null;
 			var refFrameLayerCalculations = null;
+			var refFrameLayerGeometry = null;
 			if (layerProperties.refFrame) {
 				refFrameLayer = magicast.findLayerByName(layerProperties.refFrame);
 				if (refFrameLayer) {
 					calculateLayer(refFrameLayer);
-					refFrameLayerProperties = refFrameLayer.properties;
-					refFrameLayerCalculations = refFrameLayer.calculations;
+					refFrameLayerCalculations = refFrameLayer.getCalculations();
+					refFrameLayerGeometry = refFrameLayer.getGeometry();
 				}
-			}			
+			}
 
             var w, h; // used in calculations
 			
             if (layerProperties.absWidth !== undefined) {
-                w = parseFloat(layerProperties.absWidth);
+                w = layerProperties.absWidth;
 			}
             if (layerProperties.relWidth !== undefined) {
-                w = (w ? w : 0) + layer.parentWidth * parseFloat(layerProperties.relWidth) / 100;
+                w = (w ? w : 0) + layer.parentWidth * layerProperties.relWidth / 100;
             }
 			
             if (layerProperties.absHeight !== undefined) {
-                h = parseFloat(layerProperties.absHeight);
+                h = layerProperties.absHeight;
 			}
             if (layerProperties.relHeight !== undefined) {
-                h = (h ? h : 0) + layer.parentHeight * parseFloat(layerProperties.relHeight) / 100;
+                h = (h ? h : 0) + layer.parentHeight * layerProperties.relHeight / 100;
             }
-						
+			
+			if (refFrameLayer) {
+				if (layerProperties.refFrameRelWidth != null) {
+					w = (w ? w : 0) + layerProperties.refFrameRelWidth * refFrameLayerCalculations.width / 100;
+				} 
+				if (layerProperties.refFrameRelHeight != null) {
+					h = (h ? h : 0) + layerProperties.refFrameRelHeight * refFrameLayerCalculations.height / 100;
+				}
+			}
+			
             if (layerProperties.aspectRatio !== undefined) {
 				if (w === undefined && h !== undefined) {
 					w = h * layerProperties.aspectRatio;
@@ -391,150 +258,117 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 						}
 					}
 				}
-            }
-			
-			/*
-			if (refFrameLayerCalculations) {				
-				var rtw = refFrameLayerCalculations.width / 100;
-				var rth = refFrameLayerCalculations.height / 100;
-		
-				if (layerProperties.refFrameRelWidth != null) {
-					widthSet = true;
-					width = width + rtw * layerProperties.refFrameRelWidth;
-				} 
-				if (layerProperties.refFrameRelHeight != null) {
-					heightSet = true;
-					height = height + rth * layerProperties.refFrameRelHeight;					
-				}
-			}
-			*/
+            }			
 			
 			// get the layer's geometry for further calculations
-			if (layer.getComponent()) {
-				if (layer.getComponent().adjust) {
+			if (layerComponent) {
+				if (layerComponent.adjust) {
 					// the component can adjust to given width/height/aspectRatio
 					// and change the geometry in doing so
-					layer.getComponent().adjust(w, h, layerProperties.aspectRatio);
+					layerComponent.adjust(w, h, layerProperties.aspectRatio);
 				}
 			}
 			
-			var geometry = layer.getGeometry();
+			var layerGeometry = layer.getGeometry();
 
 			if (w === undefined) {
-				w = geometry.width;
+				w = layerGeometry.width;
+			} else {
+				if (!layerGeometry.width) {
+					layerGeometry.width = w; 
+				}
 			}
-
+			
 			if (h === undefined) {
-				h = geometry.height;
+				h = layerGeometry.height;
+			} else {
+				if (!layerGeometry.height) {
+					layerGeometry.height = h; 
+				}
 			}
-								
+			
 			if (layerProperties.aspectRatio !== undefined) {
-				layerCalcs.aspectRatio = layerProperties.aspectRatio;
-			}
-			else {
-				layerCalcs.aspectRatio = geometry.width / geometry.height;			
+				layerCalculations.aspectRatio = layerProperties.aspectRatio;
+			} else {
+				if (layerGeometry.height) {
+					layerCalculations.aspectRatio = layerGeometry.width / layerGeometry.height;
+				} else {
+					layerCalculations.aspectRatio = 0;
+				}
 			}
 
 			if (layerProperties.maintainAspectRatio === "min") {
-				if (w / h > layerCalcs.aspectRatio) {
-					w = h * layerCalcs.aspectRatio;
+				if (w / h > layerCalculations.aspectRatio) {
+					w = h * layerCalculations.aspectRatio;
 				} else {
-					h = w / layerCalcs.aspectRatio;
+					h = w / layerCalculations.aspectRatio;
 				}
 			}
 			else if (layerProperties.maintainAspectRatio === "max") {
-				if (w / h > layerCalcs.aspectRatio) {
-					h = w / layerCalcs.aspectRatio;
+				if (w / h > layerCalculations.aspectRatio) {
+					h = w / layerCalculations.aspectRatio;
 				} else {
-					w = h * layerCalcs.aspectRatio;
+					w = h * layerCalculations.aspectRatio;
 				}
 			}
 			
-			layerCalcs.width = w;
-			layerCalcs.height = h;
+			layerCalculations.width = w;
+			layerCalculations.height = h;
 			
-            var tmp;
+			layerCalculations.referenceX = 0;
             if (layerProperties.relReferenceX !== undefined) {
-                tmp = (geometry.width ? geometry.width / 100 * parseFloat(layerProperties.relReferenceX) : 0);
+				layerCalculations.referenceX = layerCalculations.referenceX + layerGeometry.width / 100 * layerProperties.relReferenceX;
             }
             if (layerProperties.absReferenceX !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.absReferenceX);
+                layerCalculations.referenceX = layerCalculations.referenceX + layerProperties.absReferenceX;
             }
-            if (tmp !== undefined) {
-                layerCalcs.referenceX = tmp;
-            } else {
-                layerCalcs.referenceX = 0;
-			}
-            tmp = undefined;
+			layerCalculations.x = 0;
             if (layerProperties.relX !== undefined) {
-                tmp = (layer.parentWidth ? layer.parentWidth / 100 * parseFloat(layerProperties.relX) : 0);
+                layerCalculations.x = layerCalculations.x + (layer.parentWidth ? layer.parentWidth / 100 * layerProperties.relX : 0);
             }
             if (layerProperties.absX !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.absX);
+                layerCalculations.x = layerCalculations.x + layerProperties.absX;
             }
             if (layerProperties.selfRelX !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.selfRelX / 100 * w);
+                layerCalculations.x = layerCalculations.x + layerProperties.selfRelX / 100 * w;
             }
-            if (layerProperties.dragX !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.dragX);
-            }
-            if (tmp !== undefined) {
-                layerCalcs.x = tmp;
-            }
-            tmp = undefined;
+			layerCalculations.x = layerCalculations.x + layerProperties.moveX;
+			
+			layerCalculations.referenceY = 0;
             if (layerProperties.relReferenceY !== undefined) {
-                tmp = (geometry.height ? geometry.height / 100 * parseFloat(layerProperties.relReferenceY) : 0);
+				layerCalculations.referenceY = layerCalculations.referenceY + layerGeometry.height / 100 * layerProperties.relReferenceY;
             }
             if (layerProperties.absReferenceY !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.absReferenceY);
+                layerCalculations.referenceY = layerCalculations.referenceY + layerProperties.absReferenceY;
             }
-            if (tmp !== undefined) {
-                layerCalcs.referenceY = tmp;
-            } else {
-                layerCalcs.referenceY = 0;
-			}
-            tmp = undefined;
+			layerCalculations.y = 0;
             if (layerProperties.relY !== undefined) {
-                tmp = (layer.parentHeight ? layer.parentHeight / 100 * parseFloat(layerProperties.relY) : 0);
+                layerCalculations.y = layerCalculations.y + (layer.parentHeight ? layer.parentHeight / 100 * layerProperties.relY : 0);
             }
             if (layerProperties.absY !== undefined) {
-                tmp = tmp || 0;
-                tmp += parseFloat(layerProperties.absY);
+                layerCalculations.y = layerCalculations.y + layerProperties.absY;
             }
             if (layerProperties.selfRelY !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.selfRelY / 100 * w);
+                layerCalculations.y = layerCalculations.y + layerProperties.selfRelY / 100 * h;
             }
-            if (layerProperties.dragY !== undefined) {
-                tmp = tmp || 0;
-                tmp = tmp + parseFloat(layerProperties.dragY);
-            }
-            if (tmp !== undefined) {
-                layerCalcs.y = tmp;
-            }
+			layerCalculations.y = layerCalculations.y + layerProperties.moveY;
 			
             if (layerProperties.scaleX !== undefined) {
-                layerCalcs.scaleX = parseFloat(layerProperties.scaleX) / 100;
+                layerCalculations.scaleX = layerProperties.scaleX / 100;
             } else {
-                layerCalcs.scaleX = 1;
+                layerCalculations.scaleX = 1;
 			}
             if (layerProperties.scaleY !== undefined) {
-                layerCalcs.scaleY = parseFloat(layerProperties.scaleY) / 100;
+                layerCalculations.scaleY = layerProperties.scaleY / 100;
             } else {
-                layerCalcs.scaleY = 1;
+                layerCalculations.scaleY = 1;
 			}
 			
-			if (layerProperties.alpha !== undefined) {
-				layerCalcs.alpha = parseFloat(layerProperties.alpha) / 100;
-			}
+			layerCalculations.alpha = layerProperties.alpha / 100;
+			layerCalculations.rotation = layerProperties.rotation;
 			
-			if (refFrameLayerCalculations) {
-		
+			if (refFrameLayer) {
+
 				// scale
 				if (layerProperties.refFrameAnchorScaleX) layerCalculations.scaleX = layerCalculations.scaleX * refFrameLayerCalculations.scaleX;
 				if (layerProperties.refFrameAnchorScaleY) layerCalculations.scaleY = layerCalculations.scaleY * refFrameLayerCalculations.scaleY;
@@ -546,55 +380,48 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 				if (layerProperties.refFrameAnchorAlpha) layerCalculations.alpha = layerCalculations.alpha * refFrameLayerCalculations.alpha;
 
 				// x, y
+				if (layerProperties.refFrameAnchorX) layerCalculations.x = layerCalculations.x + refFrameLayerCalculations.x;
+				if (layerProperties.refFrameAnchorY) layerCalculations.y = layerCalculations.y + refFrameLayerCalculations.y;
 				
-				/*
-				if (layerProperties.refFrameAnchorX) layerCalculations.parallaxLevelX = layerCalculations.parallaxLevelX + refFrameLayerCalculations.parallaxLevelX;
-				var tmpX:Number = refFrameLayer.originalWidth ? -refFrameLayerCalculations.referenceX / refFrameLayer.originalWidth * refFrameLayerCalculations.width : 0;
+				var tmpX = -refFrameLayerCalculations.referenceX / refFrameLayerGeometry.width * refFrameLayerCalculations.width;
 				if (layerProperties.refFrameAbsX != null) tmpX = tmpX + layerProperties.refFrameAbsX;
 				if (layerProperties.refFrameRelX != null) tmpX = tmpX + layerProperties.refFrameRelX * refFrameLayerCalculations.width / 100;
-				if (layerProperties.refFramSelfRelX != null) tmpX = tmpX; // TODO
-
-				if (layerProperties.refFrameAnchorY) layerCalculations.parallaxLevelY = layerCalculations.parallaxLevelY + refFrameLayerCalculations.parallaxLevelY;
-				var tmpY:Number = refFrameLayer.originalHeight ? -refFrameLayerCalculations.referenceY / refFrameLayer.originalHeight * refFrameLayerCalculations.height : 0;
+				if (layerProperties.refFrameSelfRelX != null) tmpX = tmpX + layerProperties.refFrameSelfRelX * w / 100;
+				
+				var tmpY = -refFrameLayerCalculations.referenceY / refFrameLayerGeometry.height * refFrameLayerCalculations.height;
 				if (layerProperties.refFrameAbsY != null) tmpY = tmpY + layerProperties.refFrameAbsY;
 				if (layerProperties.refFrameRelY != null) tmpY = tmpY + layerProperties.refFrameRelY * refFrameLayerCalculations.height / 100;
-				if (layerProperties.refFramSelfRelY != null) tmpY = tmpY; // TODO
+				if (layerProperties.refFrameSelfRelY != null) tmpY = tmpY + layerProperties.refFrameSelfRelY * h / 100;
+
+				tmpX = tmpX * refFrameLayerCalculations.scaleX;
+				tmpY = tmpY * refFrameLayerCalculations.scaleY;
 				
-				// special case: 
-				// if reference layer is not scaled according to parallax, the reference plane must be scaled
-				if (refFrameLayerCalculations.parallaxLevel && !refFrameLayerCalculations.parallaxScale) {
-					scale = properties.cameraParallaxLevel / (1 + (refFrameLayerCalculations.parallaxLevel - 1) / properties.cameraParallaxLevel);
+				if (refFrameLayerCalculations.rotation) {
+					var tmpCos = Math.cos(refFrameLayerCalculations.rotation / 360 * Math.PI * 2);
+					var tmpSin = Math.sin(refFrameLayerCalculations.rotation / 360 * Math.PI * 2);								
+					layerCalculations.x = layerCalculations.x + (tmpX * tmpCos - tmpY * tmpSin);
+					layerCalculations.y = layerCalculations.y + (tmpY * tmpCos + tmpX * tmpSin);
 				} else {
-					scale = 1;
+					layerCalculations.x = layerCalculations.x + tmpX;
+					layerCalculations.y = layerCalculations.y + tmpY;
 				}
 				
-				tmpX = tmpX * refFrameLayerCalculations.refFrameScaleX * scale;
-				tmpY = tmpY * refFrameLayerCalculations.refFrameScaleY * scale;
-				var tmpCos:Number = Math.cos(refFrameLayerCalculations.rotation / 360 * Math.PI * 2);
-				var tmpSin:Number = Math.sin(refFrameLayerCalculations.rotation / 360 * Math.PI * 2);								
-				layerCalculations.parallaxLevelX = layerCalculations.parallaxLevelX + (tmpX * tmpCos - tmpY * tmpSin);
-				layerCalculations.parallaxLevelY = layerCalculations.parallaxLevelY + (tmpY * tmpCos + tmpX * tmpSin);
-				
-				// parallaxLevel
-				if (layerProperties.refFrameAnchorParallaxLevel) layerCalculations.parallaxLevel = layerCalculations.parallaxLevel + refFrameLayerCalculations.parallaxLevel;
-				*/
 			}
 			
-			
-            // Check if there are dragBounds defined
-            if (layerProperties.dragBounds) {
+            // Check if there are moveDragBounds defined
+            if (layerProperties.moveDragBounds) {
                 var minX = 0, minY = 0, maxX, maxY;
-				if (!layer.dragBoundsLayer) {
-					layer.dragBoundsLayer = magicast.findLayerByName(layerProperties.dragBounds);
+				if (!layer.moveDragBoundsLayer) {
+					layer.moveDragBoundsLayer = magicast.findLayerByName(layerProperties.moveDragBounds);
 				}
-				if (layer.dragBoundsLayer) {
-					var dbCalcs = layer.dragBoundsLayer.getCalculations();
+				if (layer.moveDragBoundsLayer) {
+					var dbCalcs = layer.moveDragBoundsLayer.getCalculations();
 					minX = dbCalcs.x - dbCalcs.referenceX * dbCalcs.scaleX;
 					minY = dbCalcs.y - dbCalcs.referenceY * dbCalcs.scaleY;
-					maxX = minX + dbCalcs.width * dbCalcs.scaleX - layerCalcs.width * layerCalcs.scaleY;
-					maxY = minY + dbCalcs.height * dbCalcs.scaleY - layerCalcs.height * layerCalcs.scaleY;
+					maxX = minX + dbCalcs.width * dbCalcs.scaleX - layerCalculations.width * layerCalculations.scaleY;
+					maxY = minY + dbCalcs.height * dbCalcs.scaleY - layerCalculations.height * layerCalculations.scaleY;
 					
-					var curX = layerCalcs.x, curY = layerCalcs.y;
+					var curX = layerCalculations.x, curY = layerCalculations.y;
 					var dx = 0, dy = 0;
 					if (curX < minX) {
 						dx = minX - curX;
@@ -608,30 +435,12 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 					else if (curY > maxY) {
 						dy = maxY - curY;
 					}
-					layerProperties.dragX += dx;
-					layerCalcs.x += dx;
-					layerProperties.dragY += dy;
-					layerCalcs.y += dy;
+					layerProperties.moveX += dx;
+					layerCalculations.x += dx;
+					layerProperties.moveY += dy;
+					layerCalculations.y += dy;
 				}
             }
-			
-            return layerProperties;
-        }
-
-        function getTransformVariants() {
-            return["transform", "-webkit-transform", "-moz-transform", "-ms-transform", "-o-transform"];
-        }
-
-        function generateTransforms(type, value) {
-            var s = "";
-            if (value !== undefined) {
-                s = type + "(" + value + ")";
-            }
-            var obj = {};
-            _.each(getTransformVariants(), function (i) {
-                obj[i] = s;
-            });
-            return obj;
         }
 
         function checkLayerVisibility(layer) {
@@ -675,79 +484,42 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             }
         }
 
-        function updateDimensions() {
-            var vp = viewport && viewport.getCalculations();
-            if (vp) {
-                var dims = {};
-                dims.width = parseFloat(vp.width) + parseFloat(vp.x) + "px";
-                dims.height = parseFloat(vp.height) + parseFloat(vp.y) + "px";
-
-                magicast.$viewport[0].style.cssText += Utils.convertToCssString(dims);
-                magicast.$root[0].style.cssText += Utils.convertToCssString(dims);
-            }
-        }
-
-        function updateScaling() {
-            if (magicast.scalingDims) {
-				var vp = magicast.$viewport[0];
-			
-                var minWidth = magicast.scalingDims.minw;
-                var maxWidth = magicast.scalingDims.maxw;
-                var minHeight = magicast.scalingDims.minh;
-                var maxHeight = magicast.scalingDims.maxh;
-
-                var w = vp.clientWidth;
-                var h = vp.clientHeight;
-                var min,args;
-                if (w < minWidth || h < minHeight) {
-                    args = _.filter([w/minWidth,h/minHeight], function(num) { return !isNaN(num); });
-                    min = _.min(args);
-                    scale = min;
-                }
-                else if(w > maxWidth || h > maxHeight){
-                    args = _.filter([w/maxWidth,h/maxHeight], function(num) { return !isNaN(num); });
-                    min = _.min(args);
-                    scale = min;
-                }
-                else {
-                    scale = 1;
-                }
-
-                var transformObj = Utils.generateTransformVariants("scale", scale);
-                var toObj = Utils.generateCssVariants("transform-origin", "top left");
-
-                // Set size to match calculated value
-                var dimObj = {
-					width: w/min + "px",
-					height: h/min + "px"
-				};
-                transformObj = _.extend(transformObj, toObj, dimObj);
-                vp.style.cssText += Utils.convertToCssString(transformObj);
-            }
-        }
-
-        function resizeLayerClipper(layer, clipDimensions) {
-            var $layerClip = layer.getClipper();
-            $layerClip[0].style.cssText += Utils.convertToCssString(clipDimensions);
+        function resizeLayerClipper(layer, clipperDimensions) {
+            layer.getClipper().width(clipperDimensions.width).height(clipperDimensions.height);
         }
 
         function renderLayer(layer) {
-            var $el = layer.getContainer();
-            var elem = $el[0];
+			
+			var layerProperties = layer.getProperties();
+			var layerCalculations = layer.getCalculations();
+			var layerComponent = layer.getComponent();
+			var layerGeometry = layer.getGeometry();			
 
+            var elem = layer.getContainer()[0];
+			
             // Can can override the rendeding by providing rendering implementation
-            if (layer.getComponent() && layer.getComponent().render) {
-                layer.getComponent().render(layer.getProperties(), layer.getCalculations());
+            if (layerComponent && layerComponent.render) {
+                layerComponent.render(layerProperties, layerCalculations);
 			}
-            else { // Let layout manager make the rendering (= CSS definitions)
-                var cssText = convertToCss(layer);
-                elem.style.cssText += "; "  + cssText;
+            else { // Let layout manager make the rendering (= CSS definitions)			
+				var css = {};
+				css["position"] = "absolute";
+				_.extend(css, Utils.generateCssVariants("box-sizing", "border-box"));
+				css["white-space"] = "nowrap";
+				css["width"] = layerGeometry.width + "px";
+				css["height"] = layerGeometry.height + "px";
+				css["opacity"] = layerCalculations.alpha;
+				css["visibility"] = layerProperties.visible ? "visible" : "hidden";
+				css["pointer-events"] = layerProperties.enablePointer ? "auto" : "none";
+				css["cursor"] = layerProperties.cursor ? layerProperties.cursor : "auto";
+				_.extend(css, Utils.generateCssVariants("transform-origin", "0px 0px 0px"));
+				_.extend(css, Utils.generateCssVariants("transform", "translateX(" + layerCalculations.x + "px) translateY(" + layerCalculations.y + "px) " + (layerProperties["accelerated"] ? "translateZ(0) " : "") + " rotate(" + layerCalculations.rotation + "deg) scaleX(" + (layerCalculations.width / layerGeometry.width * layerCalculations.scaleX) + ") scaleY(" + (layerCalculations.height / layerGeometry.height * layerCalculations.scaleY) + ") translateX(" + -layerCalculations.referenceX + "px) translateY(" + -layerCalculations.referenceY + "px)"));
+				_.extend(css, Utils.generateCssVariants("select", layerProperties.selectable ? "all" : "none"));
+				elem.style.cssText = Utils.convertToCssString(css);
             }
 
             // Adjust clipper's opacity also
-            var opa = elem.style.opacity;
-            var $clip = layer.getClipper();
-            $clip[0].style.opacity = opa;
+            layer.getClipper().get(0).style["opacity"] = elem.style["opacity"];
         }
 
         /**
@@ -787,24 +559,57 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
                 stage = magicast.findLayerByName(magicast.getProperties()["stage"]);
             }
 			
-            var clipDimensions = {
-				width: magicast.$root.width() + "px",
-				height: magicast.$root.height() + "px"
+            var clipperDimensions = {
+				width: magicast.$root.width(),
+				height: magicast.$root.height()
 			};
 
             // 1st check the viewport layer if defined and resize that
             // 2nd resize magicast
             // 3rd calculate scaling to the viewport (if needed)
 			if (viewport) {
-				resizeLayerClipper(viewport, clipDimensions);
+				resizeLayerClipper(viewport, clipperDimensions);
+				var calcs = viewport.getCalculations();
+				magicast.$viewport.width(calcs.width).height(calcs.height);
+				magicast.$root.width(calcs.width).height(calcs.height);
 			}
-			updateDimensions();
-			updateScaling();
+			if (magicast.scalingDims) {
+				var vp = magicast.$viewport[0];
+			
+				var minWidth = magicast.scalingDims.minWidth;
+				var maxWidth = magicast.scalingDims.maxWidth;
+				var minHeight = magicast.scalingDims.minHeight;
+				var maxHeight = magicast.scalingDims.maxHeight;
 
+				var w = vp.clientWidth;
+				var h = vp.clientHeight;
+				var min,args;
+				if (w < minWidth || h < minHeight) {
+					args = _.filter([w/minWidth,h/minHeight], function(num) { return !isNaN(num); });
+					min = _.min(args);
+					scale = min;
+				}
+				else if(w > maxWidth || h > maxHeight){
+					args = _.filter([w/maxWidth,h/maxHeight], function(num) { return !isNaN(num); });
+					min = _.min(args);
+					scale = min;
+				}
+				else {
+					scale = 1;
+				}
+				
+				// Set size to match calculated value
+				var css = {
+					width: w/min + "px",
+					height: h/min + "px"
+				};
+				_.extend(css, Utils.generateCssVariants("transform-origin", "0px 0px"), Utils.generateCssVariants("transform", "scale(scale)"));
+				vp.style.cssText = Utils.convertToCssString(css);
+			}				
 			if (viewport) {
-                clipDimensions = {
-					width: (viewport.getCalculations().width / scale) + "px",
-					height: (viewport.getCalculations().height / scale) + "px"
+                clipperDimensions = {
+					width: (viewport.getCalculations().width / scale),
+					height: (viewport.getCalculations().height / scale)
 				};
 			}			
 
@@ -822,7 +627,7 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             _(magicast.getLayers()).each(function (layer) {
 			
                 // In case there was a resize, resize also all the layers
-                resizeLayerClipper(layer, clipDimensions);
+                resizeLayerClipper(layer, clipperDimensions);
 
 				calculateLayer(layer);
 				

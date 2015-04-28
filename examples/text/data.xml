@@ -6,27 +6,15 @@
         <layer>
             <name>otsikko1</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
-                <parameters>
-                    <textValue>Matkalla pohjoiseen</textValue>
-                    <scale>none</scale>
-                    <wordWrap>none</wordWrap>
-                    <verticalAlign>middle</verticalAlign>
-                    <horizontalAlign>center</horizontalAlign>
-
-
-                </parameters>
+                <type>source</type>
+                <value>components/2015/text.js</value>
             </asset>
-
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 2px red</border>
-                </style>
-            </css>
+			<parameters>
+				<text>Matkalla pohjoiseen</text>
+				<scale>none</scale>
+				<wordWrap>none</wordWrap>
+				<align>center</align>
+			</parameters>
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>
@@ -59,10 +47,11 @@
         <layer>
         <name>junnuText</name>
         <asset>
-            <type>component</type>
-            <value>2013/text.js</value>
-            <parameters>
-                <textValue>
+            <type>source</type>
+            <value>components/2015/text.js</value>
+        </asset>
+	   <parameters>
+			<text>
 Kauheessa kiireessä Kaamasen tiellä
 Lähteellä Masa joi kauhasta
 Sillä sen täytyi taas kapseli niellä
@@ -111,34 +100,22 @@ Jo vain me kimpassa tuumittiin
 Mies kun tulee tiettyyn ikään
 No, älä ole milläsikään
 Nyt päästiin naisista, ja painajaisista
-Jo vain me kimpassa tuumattiin</textValue>
-                <wordWrap>false</wordWrap>
-                <scale>false</scale>
-
-            </parameters>
-        </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 1px red</border>
-                </style>
-            </css>
-            <property>
-                <name>maintainAspectRatio</name>
-                <value>min</value>
-            </property>
+Jo vain me kimpassa tuumattiin</text>
+			<wordWrap>false</wordWrap>
+			<scale>false</scale>
+		</parameters>
+       		<property>
+			<name>maintainAspectRatio</name>
+			<value>min</value>
+		</property>
         <property>
             <name>relWidth</name>
             <value>25</value>
         </property>
-
         <property>
             <name>relHeight</name>
             <value>90</value>
         </property>
-
         <property>
             <name>relX</name>
             <value>0</value>
@@ -164,29 +141,20 @@ Jo vain me kimpassa tuumattiin</textValue>
             <value>false</value>
         </property>
     </layer>
-
         <layer>
             <name>otsikko2</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
+                <type>source</type>
+                <value>components/2015/text.js</value>
+            </asset>
                 <parameters>
-                    <textValue>Kotkan poikii ilman siipii</textValue>
+                    <text>Kotkan poikii ilman siipii</text>
                     <scale>none</scale>
                     <wordWrap>true</wordWrap>
-                    <verticalAlign>middle</verticalAlign>
-                    <horizontalAlign>center</horizontalAlign>
+                    <align>center</align>
 
                 </parameters>
-            </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 2px blue</border>
-                </style>
-            </css>
+
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>
@@ -219,10 +187,12 @@ Jo vain me kimpassa tuumattiin</textValue>
         <layer>
             <name>junnuText2</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
+                <type>source</type>
+                <value>components/2015/text.js</value>
+
+            </asset>
                 <parameters>
-                    <textValue>
+                    <text>
 Rannalla istuin mä haitari soi
 Aalto löi liplattaen
 Mistä mä haaveilin muistaa en voi
@@ -269,20 +239,12 @@ Maailman myrskyt keinuttaa
 Taakse jäivät nuoruuspäivät
 Takaisin ei niitä saa
 Laulut tuulen nuo vain kuulen
-Enkä tiedä kauniinpaa</textValue>
+Enkä tiedä kauniinpaa</text>
                     <wordWrap>true</wordWrap>
                     <scale>none</scale>
 
-                </parameters>
-            </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 1px blue</border>
-                </style>
-            </css>
+                </parameters>			
+
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>
@@ -326,24 +288,15 @@ Enkä tiedä kauniinpaa</textValue>
         <layer>
             <name>otsikko3</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
+                <type>source</type>
+                <value>components/2015/text.js</value>
+            </asset>
                 <parameters>
-                    <textValue>Vanhoja poikia viiksekkäitä</textValue>
+                    <text>Vanhoja poikia viiksekkäitä</text>
                     <scale>both</scale>
                     <wordWrap>false</wordWrap>
-                    <verticalAlign>middle</verticalAlign>
-                    <horizontalAlign>center</horizontalAlign>
+                    <align>center</align>
                 </parameters>
-            </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 2px green</border>
-                </style>
-            </css>
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>
@@ -358,29 +311,31 @@ Enkä tiedä kauniinpaa</textValue>
             </property>
             <property>
                 <name>relReferenceX</name>
-                <value>0</value>
-            </property>
-            <property>
-                <name>relReferenceY</name>
-                <value>0</value>
-            </property>
-            <property>
-                <name>relX</name>
                 <value>50</value>
             </property>
             <property>
+                <name>relReferenceY</name>
+                <value>50</value>
+            </property>
+            <property>
+                <name>relX</name>
+                <value>62.5</value>
+            </property>
+            <property>
                 <name>relY</name>
-                <value>0</value>
+                <value>5</value>
             </property>
         </layer>
 
         <layer>
             <name>junnuText3</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
+                <type>source</type>
+                <value>components/2015/text.js</value>
+
+            </asset>
                 <parameters>
-                    <textValue>
+                    <text>
 Nään vanhan Tornatorin yhä vielä mielessäin
 Kun sillä silloin matkaan lähdit lapsuusystäväin
 Niin jäI koulu kesken sulla
@@ -434,23 +389,12 @@ Mut albatrossi joka lepäämättä liitää
 Se sinun sielusi on juuri kukaties
 Kerrain lailla sen saan vapaana myös kiitää
 Jos teen työni kuten vanha merimies (merimies)
-Jos teen työni kuten vanha merimies</textValue>
+Jos teen työni kuten vanha merimies</text>
                     <wordWrap>false</wordWrap>
                     <scale>true</scale>
-                    <verticalAlign>middle</verticalAlign>
-                    <horizontalAlign>center</horizontalAlign>
+                    <align>center</align>
+                </parameters>			
 
-
-                </parameters>
-            </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 1px green</border>
-                </style>
-            </css>
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>
@@ -463,10 +407,9 @@ Jos teen työni kuten vanha merimies</textValue>
                 <name>relHeight</name>
                 <value>90</value>
             </property>
-
             <property>
                 <name>relX</name>
-                <value>50</value>
+                <value>62.5</value>
             </property>
             <property>
                 <name>relY</name>
@@ -474,7 +417,7 @@ Jos teen työni kuten vanha merimies</textValue>
             </property>
             <property>
                 <name>relReferenceX</name>
-                <value>0</value>
+                <value>50</value>
             </property>
             <property>
                 <name>relReferenceY</name>
@@ -493,24 +436,15 @@ Jos teen työni kuten vanha merimies</textValue>
         <layer>
             <name>otsikko4</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
+                <type>source</type>
+                <value>components/2015/text.js</value>
+            </asset>
                 <parameters>
-                    <textValue>Vanhoja poikia viiksekkäitä</textValue>
+                    <text>Vanhoja poikia viiksekkäitä</text>
                     <scale>both</scale>
                     <wordWrap>true</wordWrap>
-                    <verticalAlign>middle</verticalAlign>
-                    <horizontalAlign>center</horizontalAlign>
+                    <align>center</align>
                 </parameters>
-            </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 2px orange</border>
-                </style>
-            </css>
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>
@@ -544,10 +478,12 @@ Jos teen työni kuten vanha merimies</textValue>
         <layer>
             <name>junnuText4</name>
             <asset>
-                <type>component</type>
-                <value>2013/text.js</value>
+                <type>source</type>
+                <value>components/2015/text.js</value>
+
+            </asset>
                 <parameters>
-                    <textValue>
+                    <text>
 Saimaan saaressa pikkuinen torppa,
 istuu portailla Nestori Miikkulainen.
 Huuliharppuaan soittaa, ja norppa
@@ -589,21 +525,12 @@ olla sukunsa viimeinen.
 maailma houkutti pois morsion.)
 
 Vanhoja poikia viiksekkäitä
-mies sekä hylje kumpikin on.</textValue>
+mies sekä hylje kumpikin on.</text>
                     <wordWrap>true</wordWrap>
                     <scale>both</scale>
 
 
-                </parameters>
-            </asset>
-            <css>
-                <style>
-                    <color>black</color>
-                    <font-family>arial</font-family>
-                    <font-size>10px</font-size>
-                    <border>solid 1px orange</border>
-                </style>
-            </css>
+                </parameters>			
             <property>
                 <name>maintainAspectRatio</name>
                 <value>min</value>

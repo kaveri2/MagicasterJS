@@ -121,7 +121,7 @@ define(["jquery",
                 return Magicaster.server.callMethod("Path.search", { 'name': path.name })
                     .done(function (data) {
                         path.data = data.data;
-                        path.id = data.id;
+                        path.id = $.trim(data.id);
 						/**
 						 * Page's Magicaster path has changed
 						 * @event
@@ -159,17 +159,16 @@ define(["jquery",
              * @param data {Object} collision detection group data
              * @param layer {Layer} layer
              */
-            function applyCdGroup(data, layer) {
-                var name = (data.global === "true" ? "global_" : "" + layer.getObject().index + "_") + data.name;
+            function applyCdGroup(magicast, layer, global, name, source, target) {
+                var name = (global ? "global_" : "local_" + magicast.getObject().index + "_") + name;
                 if (!cdGroups[name]) {
                     cdGroups[name] = {
                         sources: {},
                         targets: {}
                     };
                 }
-                if (data.source === "true") {
+                if (source) {
                     cdGroups[name].sources[layer.index] = {
-                        data: data,
                         layer: layer,
                         element: layer.getContainer()[0],
                         oldState: false
@@ -178,9 +177,8 @@ define(["jquery",
                 else {
                     delete cdGroups[name].sources[layer.index];
                 }
-                if (data.target === "true") {
+                if (target) {
                     cdGroups[name].targets[layer.index] = {
-                        data: data,
                         layer: layer,
                         element: layer.getContainer()[0],
                         oldState: false
@@ -335,26 +333,9 @@ define(["jquery",
                 return _.where(magicasts, {name: Utils.validateName(name, 'Magicast')});
             }
 
-            function fixData(data) {
-                // backwards compatibility = magicast -> data
-                if (data.magicast) {
-                    data.data = data.magicast;
-                    delete data.magicast;
-                }
-                // if data and id are not defined, assume data has a root element, which must be removed
-                if (!data.id && !data.data) {
-                    for (var prop in data) {
-                        if (data.hasOwnProperty(prop)) {
-                            data = data[prop];
-                        }
-                    }
-                }
-                return data;
-            }
-
-            function showStatus(magicast, container, type, parameters) {
+            function showStatus(magicast, container, type, params) {
                 if (Magicaster.configuration.statusHandler) {
-                    Magicaster.configuration.statusHandler.show(magicast, $(container).find('.magicaster-magicast-status-display')[0], type, parameters);
+                    Magicaster.configuration.statusHandler.show(magicast, $(container).find('.magicaster-magicast-status-display')[0], type, params);
                 }
             }
 
@@ -499,7 +480,7 @@ define(["jquery",
                     el.addClass("magicaster-magicast-resolved");
                     var id = el.data("magicaster-magicast-id");
                     var check = el.data("magicaster-magicast-check");
-                    initializePromises.push(createMagicast({ 'id': id, 'check': check }, container));
+                    initializePromises.push(createMagicast({'id': id, 'check': check}, container));
                 });
 
                 _(JSONContainers).each(function (container) {
@@ -514,7 +495,7 @@ define(["jquery",
                         }
                         el.find("textarea").remove();
                         Magicaster.console.log("[Magicaster] JSON from textarea", data);
-                        initializePromises.push(createMagicast(fixData(data), container));
+                        initializePromises.push(createMagicast(data, container));
                     }
                     // load JSON file
                     else {
@@ -537,7 +518,7 @@ define(["jquery",
                         }
                         el.find("textarea").remove();
                         Magicaster.console.log("[Magicaster] XML from textarea", data);
-                        initializePromises.push(createMagicast(fixData(data), container));
+                        initializePromises.push(createMagicast(data, container));
                     }
                     // load XML file
                     else {
@@ -545,7 +526,7 @@ define(["jquery",
                         XmlParser.parseAsync(data)
                             .done(function (data) {
                                 Magicaster.console.log("[Magicaster] XML from file", data);
-                                createMagicast(fixData(data), container).done(function () {
+                                createMagicast({'data': data}, container).done(function () {
                                     d.resolve();
                                 });
                             })
@@ -647,7 +628,35 @@ define(["jquery",
                         "horizontalDirection": horizontalScrollDirection
                     });
                 });
+				
+				var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+				
+				$(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange', function(e) {
+					var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+					
+					triggerGlobalEvent("fullscreen_change");
+					if (fullscreenElement) {
+						globalVariables["fullscreen"] = 1;
+						triggerGlobalEvent("fullscreen_enter");
+					} else {
+						globalVariables["fullscreen"] = 0;
+						triggerGlobalEvent("fullscreen_exit");
+					}
+					
+					_.each(magicasts, function (magicast) {
+						if (fullscreenElement==magicast.$root.get(0)) {
+							magicast.setVariable("fullscreen", 1);
+							magicast.triggerEvent("fullscreen_change");
+							triggerGlobalEvent("fullscreen_enter");
+						} else if (magicast.getVariable("fullscreen")==1) {
+							magicast.setVariable("fullscreen", false);
+							magicast.triggerEvent("fullscreen_change");
+							triggerGlobalEvent("fullscreen_exit");
+						}
+					});
 
+				});
+				
                 $(window).on("resize", function () {
                     //relative scroll positions change when resizing so they have to be recalculated
                     calculateScroll();
@@ -770,66 +779,6 @@ define(["jquery",
                 }
             }
 
-            function resolveAndSetVariable(component, params, value) {
-                Magicaster.console.log("resolveAndSetVariable", component, params, value);
-
-                // global level
-                if ($.trim(params.level) === "global") {
-                    globalVariables[$.trim(params.name)] = value;
-                    return true;
-                }
-
-                // local level
-                var retVal = false;
-                var magicasts = params.magicast ? Magicaster.findMagicastsByName($.trim(params.magicast)) : [component];
-                _.each(magicasts, function (magicast) {
-                    magicast.setVariable($.trim(params.name), value);
-                    retVal = true;
-                });
-                return retVal;
-            }
-
-            function resolveAndGetVariable(component, params) {
-//                Magicaster.console.log("[Magicaster] resolveAndGetVariable", component, params);
-
-                // global level
-                if ($.trim(params.level) === "global") {
-                    return globalVariables[$.trim(params.name)];
-                }
-
-                // local level
-                var magicast = params.magicast ? Magicaster.findMagicastsByName($.trim(params.magicast))[0] : component;
-                if (magicast) {
-                    return magicast.getVariable($.trim(params.name));
-                }
-
-                return null;
-            }
-
-            function resolveAndGetProperty(component, layer, params) {
-//                Magicaster.console.log("[Magicaster] resolveAndGetProperty", component, layer, params);
-
-                var magicast = params.magicast ? Magicaster.findMagicastsByName($.trim(params.magicast))[0] : component;
-
-                // magicast level
-                if ($.trim(params.level) === "magicast" || (!layer && !params.layer)) {
-                    return magicast.getProperties()[$.trim(params.name)];
-                }
-
-                // layer level
-                if (params.layer) {
-                    layer = magicast.findLayerByName($.trim(params.layer));
-                }
-                if (layer) {
-                    var name = $.trim(params.name);
-                    // Supports calcs 1st and properties 2nd
-                    var propValue = layer.getCalculations()[name] || layer.getProperties()[name];
-                    return propValue;
-                }
-
-                return null;
-            }
-
 			function parseSourceName(fullName) {
 				if (fullName && fullName.indexOf('/') >= 0 && fullName.indexOf('.') > 0) {
 					// This assumes we are having at least one '/' -character and '.' -character
@@ -856,166 +805,189 @@ define(["jquery",
 				
 				if (params instanceof Object === true) {
 				
-					var type = params.type;
+					var type = $.trim(params.type);
+					var value = params.value;
 				
-                    if (type === "constant") {
-                        return params.value;
+                    if (type == "constant") {
+                        return $.trim(value);
                     }
-                    if (type === "source") {
-                        return parseSourceName(params.value);
+                    if (type == "source") {
+                        return parseSourceName($.trim(value));
                     }
-                    if (type === "eventArgument") {
-                        return eventArgs ? eventArgs[params.value] : null;
+                    if (type == "eventArgument") {
+                        return eventArgs ? eventArgs[$.trim(value)] : null;
                     }
-                    if (type === "variable") {
-                        return resolveAndGetVariable(magicast, params.value);
+                    if (type == "variable") {
+						// global level
+						if (Magicaster.resolveAndGetValue(magicast, layer, value.level, eventArgs) == "global") {
+							return globalVariables[Magicaster.resolveAndGetValue(magicast, layer, value.name, eventArgs)];
+						}
+						// local level
+						var magicast = value.magicast ? Magicaster.findMagicastsByName(Magicaster.resolveAndGetValue(magicast, layer, value.magicast, eventArgs))[0] : magicast;
+						if (magicast) {
+							return magicast.getVariable(Magicaster.resolveAndGetValue(magicast, layer, value.name, eventArgs));
+						}
+						return null;
                     }
-                    if (type === "property") {
-                        return resolveAndGetProperty(magicast, layer, params.value);
+                    if (type == "property") {
+						var magicast = value.magicast ? Magicaster.findMagicastsByName(Magicaster.resolveAndGetValue(magicast, layer, value.magicast, eventArgs))[0] : magicast;
+						// magicast level
+						if (Magicaster.resolveAndGetValue(magicast, layer, value.level, eventArgs) == "magicast" || (!layer && !value.layer)) {
+							return magicast.getProperties()[Magicaster.resolveAndGetValue(magicast, layer, value.name, eventArgs)];
+						}
+						// layer level
+						if (value.layer) {
+							layer = magicast.findLayerByName(Magicaster.resolveAndGetValue(magicast, layer, value.layer, eventArgs));
+						}
+						if (layer) {
+							var name = Magicaster.resolveAndGetValue(magicast, layer, value.name, eventArgs);
+							// Supports calcs 1st and properties 2nd
+							return layer.getCalculations()[name] || layer.getProperties()[name];
+						}
+						return null;
                     }
-                    if (type === "calculation") {
+                    if (type == "calculation") {
 					
 						var args = [];
-						_(Utils.convertToArray(params.value, "argument")).each(function (value) {
+						_(Utils.convertToArray(value, "argument")).each(function (value) {
 							args.push(Magicaster.resolveAndGetValue(magicast, layer, value, eventArgs));
 						});
 						
-						var value = undefined;
+						var val = undefined;
 						var cmp, num;
 						
-						switch (params.value["function"]) {
+						switch (Magicaster.resolveAndGetValue(magicast, layer, value["function"], eventArgs)) {
 						// NUMBER
 						case 'add':
-							value = 0;
+							val = 0;
 							_(args).each(function(arg) {
 								num = parseFloat(arg) || 0;
-								value = value + num;
+								val = val + num;
 							});
 							break;
 						case 'dec':
 							value = (parseFloat(args[0]) || 0) - (parseFloat(args[1]) || 0);
 							break;
 						case 'mul':
-							value = 1;
+							val = 1;
 							_(args).each(function(arg) {
 								num = parseFloat(arg) || 0;
-								value = value * num;
+								val = val * num;
 							});
 							break;
 						case 'div':
 							if (!arg2) {
 								throw new RangeError("Division by zero.");
 							}
-							value = (parseFloat(args[0]) || 0) / (parseFloat(args[1]) || 0);
+							val = (parseFloat(args[0]) || 0) / (parseFloat(args[1]) || 0);
 							break;
 						// BOOLEAN
 						case 'and':
-							value = 1;
+							val = 1;
 							_(args).each(function(arg) {
 								if (!arg) {
-									value = 0;
+									val = 0;
 								}
 							});
 							break;
 						case 'or':
-							value = 0;
+							val = 0;
 							_(args).each(function(arg) {
 								if (arg) {
-									value = 1;
+									val = 1;
 								}
 							});
 							break;
 						case 'not':
-							value = args[0] ? 0 : 1;
+							val = args[0] ? 0 : 1;
 							break;
 						case 'eq':
-							value = 1;
+							val = 1;
 							cmp = "" + args[0];
 							_(args).each(function(arg) {
 								if ("" + arg != cmp) {
-									value = 0;
+									val = 0;
 								}
 							});
 							break;
 						case 'ne':
-							value = 1;
+							val = 1;
 							cmp = "" + args[0];
 							_(args).each(function(arg) {
 								if ("" + arg == cmp) {
-									value = 0;
+									val = 0;
 								}
 							});
 							break;
 						case 'gt':
-							value = 1;
+							val = 1;
 							cmp = parseFloat(args[0]);
 							_(args).each(function(arg) {
 								if (arg != args[0]) {
 									num = parseFloat(arg);
-									if (num <= cmp) {
-										value = 0;
+									if (num >= cmp) {
+										val = 0;
 									}
 									cmp = num;
 								}
 							});
 							break;
 						case 'lt':
-							value = 1;
+							val = 1;
 							cmp = parseFloat(args[0]);
 							_(args).each(function(arg) {
 								if (arg != args[0]) {
 									num = parseFloat(arg);
-									if (num >= cmp) {
-										value = 0;
+									if (num <= cmp) {
+										val = 0;
 									}
 									cmp = num;
 								}
 							});
 							break;
 						case 'isNull':
-							value = args[0] ? 0 : 1;
+							val = args[0] ? 0 : 1;
 							break;
 						case 'isNotNull':
-							value = args[0] ? 1 : 0;
+							val = args[0] ? 1 : 0;
 							break;		
 						// STRING
 						case 'concat':
-							value = args.join("");
+							val = args.join("");
 							break;
 						// MISC
 						case 'rand':
-							value = _.random(arg1Num, arg2Num);
+							val = _.random(arg1Num, arg2Num);
 							break;
 						default:
 							break;
 						}
 						
-						return value;						
+						return val;						
                     }
-                    if (type === "conditional") {
-						console.log("CONDITIONAL", params);
-                        var cases = Utils.convertToArray(params.value, "case");
+                    if (type == "conditional") {
+                        var cases = Utils.convertToArray(value, "case");
 						var retVal = undefined;
                         _.each(cases, function(c) {
 							if (retVal === undefined && Magicaster.resolveAndGetValue(magicast, layer, c.condition, eventArgs)) {
 								retVal = Magicaster.resolveAndGetValue(magicast, layer, c.value, eventArgs);
 							}
 						});
-						console.log("CONDITIONAL", retVal);
 						return retVal;
                     }
-                    if (type === "random") {
-                        var options = Utils.convertToArray(params.value, "option");
+                    if (type == "random") {
+                        var options = Utils.convertToArray(value, "option");
                         var totalWeight = 0;
                         options.forEach(function (option) {
-                            totalWeight = totalWeight + parseFloat(option.weight);
+							option.weightFloat = Magicaster.resolveAndGetValue(magicast, layer, option.weight, eventArgs);
+                            totalWeight = totalWeight + parseFloat(option.weightFloat);
                         });
                         var randomWeight = Math.random() * totalWeight;
                         var weight = 0;
                         var index = -1;
                         while (weight < randomWeight) {
                             index = index + 1;
-                            weight = weight + parseFloat(options[index].weight);
+                            weight = weight + options[index].weightFloat;
                         }
                         if (index > -1) {
                             return Magicaster.resolveAndGetValue(magicast, layer, options[index].value, eventArgs);
@@ -1024,12 +996,12 @@ define(["jquery",
 					
 					var resolver = configuration.valueResolvers[type];
 					if (resolver) {
-						return resolver(params.value);
+						return resolver(value);
 					}
 					
                 }				
 				
-                return params;
+                return $.trim(params);
             }
 
             /**
@@ -1124,9 +1096,9 @@ define(["jquery",
 				return triggerEvent(null, null, name, args);
             }
 
-            function resolveAndTriggerEvent(component, layer, params, eventArgs) {
+            function resolveAndTriggerEvent(magicast, layer, params, eventArgs) {
 
-                Magicaster.console.log("[Magicaster] resolveAndTriggerEvent", component, layer, params, eventArgs);
+                Magicaster.console.log("[Magicaster] resolveAndTriggerEvent", magicast, layer, params, eventArgs);
 
                 if (params instanceof Object === false) {
                     params = { "name": params };
@@ -1135,10 +1107,10 @@ define(["jquery",
                 // resolve arguments
                 var args = {};
                 Utils.convertToArray(params, "argument").forEach(function (arg) {
-                    args[arg.name] = Magicaster.resolveAndGetValue(component, layer, arg.value, eventArgs);
+                    args[Magicaster.resolveAndGetValue(magicast, layer, arg.name, eventArgs)] = Magicaster.resolveAndGetValue(magicast, layer, arg.value, eventArgs);
                 });
 
-				var delay = params.delay * 1000 || 0;
+				var delay = params.delay ? parseFloat(Magicaster.resolveAndGetValue(magicast, layer, params.delay, eventArgs)) * 1000 || 0 : 0;
 				if (delay > 0) {
 					setTimeout(function () {
 						run();
@@ -1150,26 +1122,29 @@ define(["jquery",
 
 				function run() {				
 					
+					var level = Magicaster.resolveAndGetValue(magicast, layer, params.level, eventArgs);
+					var name = Magicaster.resolveAndGetValue(magicast, layer, params.name, eventArgs);
+					
 					// global level
-					if ($.trim(params.level) === "global") {
-						triggerGlobalEvent(params.name, args);
+					if (level == "global") {
+						triggerGlobalEvent(name, args);
 					}
 
-					var magicasts = params.magicast ? Magicaster.findMagicastsByName(params.magicast) : [component];
+					var magicasts = params.magicast ? Magicaster.findMagicastsByName(Magicaster.resolveAndGetValue(magicast, layer, params.magicast, eventArgs)) : [magicast];
 					_.each(magicasts, function (magicast) {
 
 						// magicast level
-						if ($.trim(params.level) === "magicast" || (!layer && !params.layer)) {
-							triggerEvent(magicast, null, params.name, args);
+						if (level == "magicast" || (!layer && !params.layer)) {
+							triggerEvent(magicast, null, name, args);
 						}
 						// layer level
 						else {
 							var l = layer;
 							if (params.layer) {
-								l = magicast.findLayerByName(params.layer);
+								l = magicast.findLayerByName(Magicaster.resolveAndGetValue(magicast, layer, params.layer, eventArgs));
 							}
 							if (l) {
-								triggerEvent(magicast, l, params.name, args);
+								triggerEvent(magicast, l, name, args);
 							}
 						}
 					});
@@ -1181,34 +1156,34 @@ define(["jquery",
                 Magicaster.console.log("[Magicaster] resolveAndBindEventListener", magicast, layer, params);
 
                 var root;
+				var level = Magicaster.resolveAndGetValue(magicast, layer, params.level);
+                var name = Magicaster.resolveAndGetValue(magicast, layer, params.name);
                 var filter = "";
-                var name = "";
-
+				
                 // global level
-                if ($.trim(params.level) === "global") {
+                if (level == "global") {
                     root = document;
-					name = "magicaster_global_event_" + params.name;
+					name = "magicaster_global_event_" + name;
                 }
 
                 // magicast or layer level
                 else {
 				
-					var name = "magicaster_event_" + params.name;
-				
+					var name = "magicaster_event_" + name;
 
                     if (!params.magicast) {
                         root = magicast.$root;
                     }
                     else {
                         root = document;
-                        filter = "[name=" + Utils.validateName(params.magicast, 'Magicast') + "]";
+                        filter = "[name=" + Utils.validateName(Magicaster.resolveAndGetValue(magicast, layer, params.magicast), 'Magicast') + "]";
                     }
 
                     // not only magicast level
-                    if ($.trim(params.level) !== "magicast") {
+                    if (level != "magicast") {
                         filter = filter +
                             (params.layer ?
-                                " [name=" + Utils.validateName(params.layer, 'Layer') + "]" :
+                                " [name=" + Utils.validateName(Magicaster.resolveAndGetValue(magicast, layer, params.layer), 'Layer') + "]" :
                                 (layer ?
                                     " [name=" + layer.name + "]" :
                                     "")
@@ -1224,7 +1199,6 @@ define(["jquery",
                     if (e && e.originalEvent) {
                         args = e.originalEvent.args;
                     }
-
                     callback(args, e.originalEvent);
                 }
 
@@ -1267,6 +1241,10 @@ define(["jquery",
                     });
                 }
             }
+			
+			function setGlobalVariable(name, value) {
+				globalVariables[name] = value;
+			}
 
             //
             // EXECUTION
@@ -1293,9 +1271,6 @@ define(["jquery",
                 removeFromCd: removeFromCd,
                 triggerEvent: triggerEvent,
                 triggerGlobalEvent: triggerGlobalEvent,
-                resolveAndGetVariable: resolveAndGetVariable,
-                resolveAndSetVariable: resolveAndSetVariable,
-                resolveAndGetProperty: resolveAndGetProperty,
                 resolveAndGetValue: resolveAndGetValue,
                 resolveAndTriggerEvent: resolveAndTriggerEvent,
                 resolveAndBindEventListener: resolveAndBindEventListener,
@@ -1303,6 +1278,7 @@ define(["jquery",
                 showStatus: showStatus,
                 hideStatus: hideStatus,
 				process: process,
+				setGlobalVariable: setGlobalVariable,
                 getObjectIndex: function () {
                     return objectIndex++;
                 }

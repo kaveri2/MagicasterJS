@@ -25,7 +25,7 @@
 (function () {
     "use strict";
 
-	var gaAccount = 'UA-58687807-1';
+	var gaAccount = '';
 	window._gaq = window._gaq || [];
 	_gaq.push(['_setAccount', gaAccount], ['_setDomainName', 'none'], ['_trackPageview']);
 
@@ -105,9 +105,9 @@
     // MagicasterJS configuration definition
 	var config = {
 		debug: true,
-		clientName: "http://themightybullsitconsulting.com/magicaster/",
+		clientName: "",
 		server: {
-			uri: "http://themightybullsitconsulting.com/magicaster/server/",
+			url: "",
 			bufferTime: 0.2
 		},
 		valueResolvers: {
@@ -138,7 +138,10 @@
 		*/
 		analytics: {
 			send: function(magicast, event, label, value) {
-				_gaq.push(['_setAccount', gaAccount], ['_setDomainName', 'none'], ['_trackEvent', "magicast_" + (0 + magicast.id) + "_" + magicast.name, event, label, value]);
+				_gaq.push(
+					['_setAccount', gaAccount],
+					['_setDomainName', 'none'],
+					['_trackEvent', "magicast_" + magicast.getId() + "_" + magicast.getName(), event, label, value]);
 			}
 		}
 	};

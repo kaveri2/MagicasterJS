@@ -43,11 +43,16 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 
 		var canPlay = $.Deferred();
 
-		var ignore = data.controls !== "false" && video.setAttribute("controls", "controls");
+		var ignore = layer.resolveAndGetValue(data.controls) != "false" && video.setAttribute("controls", "controls");
 		var cue = Utils.convertToArray(data, "cue");
-		var loop = data.loop === "true" || false;
-		var paused = data.paused === "true" || false;
-		var volume = data.volume !== undefined ? parseFloat(data.volume) : 100;
+		_.each(cue, function (cue) {
+			cue.time = parseFloat(layer.resolveAndGetValue(cue.time));
+			cue.name = layer.resolveAndGetValue(cue.name);
+			cue.triggered = false;
+		});
+		var loop = layer.resolveAndGetValue(data.loop) == "true";
+		var paused = layer.resolveAndGetValue(data.paused) == "true";
+		var volume = data.volume !== undefined ? parseFloat(layer.resolveAndGetValue(data.volume)) : 100;
 
 		function setGeometry() {
 			layer.setGeometry({

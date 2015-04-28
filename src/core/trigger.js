@@ -52,62 +52,11 @@ define(["jquery", "utils/utils"], function ($, Utils) {
          * @public
          * @type {String}
          */
-        self.name = Utils.validateName(data.name, "Trigger");
-        var immediate = data.immediate === "true" || false;
+        self.name = Utils.validateName(magicast.resolveAndGetValue(data.name), "Trigger");
+        var immediate = magicast.resolveAndGetValue(data.immediate) == "true";
         self.index = data.index;
 
-        var loadDeferred = $.Deferred();
-		self.getLoadPromise = function() {
-			return loadDeferred.promise();
-		}
-
         self.timerIds = [];
-
-        function resolveActions() {
-			var promises = [];
-		
-            _(actions).each(function (data) {
-				var d = $.Deferred();
-				var url = magicast.resolveAndGetValue(data.asset);
-				if (Magicaster.actions[url] && typeof Magicaster.actions[url] === 'function') {
-					d.resolve();
-				}
-				else {
-					try {
-						require([url],
-							function (action) {
-								if (typeof action === 'function') {
-									Magicaster.console.log("[Trigger] action resolved", url, action);
-									Magicaster.actions[url] = action;
-									d.resolve();
-								}
-								else {
-									Magicaster.console.error("[Trigger] action resolve error: not a function", url, action);
-									Magicaster.actions[url] = function() {};
-									d.resolve();
-								}
-							},
-							function () {
-								Magicaster.console.error("[Trigger] action resolve error: action not found", url);
-								Magicaster.actions[url] = function() {};
-								d.resolve();
-							});
-					}
-					catch (e) {
-						Magicaster.console.error("[Trigger] action resolve error: exception", url, e);
-						Magicaster.actions[url] = function() {};
-						d.resolve();
-					}
-				}
-		
-                promises.push(d.promise());
-            });
-			
-            $.when.apply(window, promises).then(function () {
-                Magicaster.console.log('[Trigger] actions resolved', self);
-                loadDeferred.resolve();
-            });
-        }
 
         //
         // PUBLIC METHODS
@@ -126,74 +75,65 @@ define(["jquery", "utils/utils"], function ($, Utils) {
         };
 
         /**
-         * Destroys trigger, so in addition to stopping it also clears possibly pending timeouts.
+         * Destroys trigger, so in addition to unbinding event listeners it also clears possibly pending timeouts.
          * @public
          * @method
          * @name Trigger#destroy
          */
         self.destroy = function () {
-            self.stop();
+            self.unbindEventListeners();
             _(self.timerIds).each(function (tid) {
                 clearTimeout(tid);
             });
         };
 
         /**
-         * Stops trigger aka unregisters event handlers.
          * @public
          * @method
-         * @name Trigger#stop
+         * @name Trigger#unbindEventListeners
          */
-        self.stop = function () {
-            // NOTE! Stop does not clear ongoing timers. For that purpose use destroy-method.
-            Magicaster.console.log("[Trigger] stop", self);
-            // Loop through each event and stop the listeners
+        self.unbindEventListeners = function() {
+            // NOTE! Does not clear ongoing timers. For that purpose use destroy-method.
+            Magicaster.console.log("[Trigger] unbindEventListeners", self);
             _(events).each(function (event) {
 				if (event.unbindEventListener && typeof event.unbindEventListener === 'function') {
 					event.unbindEventListener();
 					delete event.unbindEventListener;
 				}
             });
-            started = false;
         };
 
-		var started = false;
         /**
-         * Trigger needs to be started explicitly.
-         * Double-starts are not allowed.
          * @public
          * @method
-         * @name Trigger#start
+         * @name Trigger#bindEventListeners
          */
-        self.start = function () {
-
-			Magicaster.console.log("[Trigger] start", self);
-		
-			// unbind and bind event listeners, to make trigger work in the correct order
-			self.stop();
+        self.bindEventListeners = function () {
+			Magicaster.console.log("[Trigger] bindEventListeners", self);
+			self.unbindEventListeners();
 			_(events).each(function (event) {
 				event.unbindEventListener = magicast.resolveAndBindEventListener(event, function(eventArgs, e) {
 					self.execute(eventArgs);
 				});
 			});
+        };
 		
-            // Check that no duplicate starts are done
-            if (started) {
-                return;
-            }
-            started = true;
-
-			Magicaster.console.log("[Trigger] start");
-
+        /**
+         * Trigger needs to be started explicitly.
+         * @public
+         * @method
+         * @name Trigger#start
+         */
+		self.start = function () {
+			Magicaster.console.log("[Trigger] start", self);
+			
             if (immediate) {
 				// wait for startup sequence to be finished before executing immediate actions
-				setTimeout(function() {
-					self.execute();
-				}, 0);
+				self.execute();
 				// trigger can be stopped and started multiple times, but run immediate triggers only once
 				immediate = false;
             }			
-        };
+		}
 
         /**
          * Executes trigger but validates possible conditions
@@ -230,16 +170,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 					var url = magicast.resolveAndGetValue(data.asset, eventArgs);
 					var action = Magicaster.actions[url];
 					if (action && (!data.condition || magicast.resolveAndGetValue(data.condition, eventArgs))) {
-					
-						// cache Magicaster.findMagicastsByName
-						if (!action.targetMagicasts) {
-							action.targetMagicasts = data.magicast ? Magicaster.findMagicastsByName(magicast.resolveAndGetValue(data.magicast, eventArgs)) : magicast;
-							action.targetMagicasts = _.flatten([action.targetMagicasts]);
-						}
-
-						_(action.targetMagicasts).each(function (magicast) {
-							action.call(null, magicast, data.parameters, eventArgs);
-						});
+						action.call(null, magicast, data.parameters, eventArgs);
 					}
 				}
 				
@@ -248,13 +179,57 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 			
 		};
 
-        //
-        // EXECUTION
-        //
-
-        // Need to wait until all actions have been resolved to continue.
-        resolveActions();
-    }
+		// Need to wait until all actions have been resolved to continue
+        var loadDeferred = $.Deferred();
+		self.getLoadPromise = function() {
+			return loadDeferred.promise();
+		}
+		
+		var promises = [];
+			
+		_(actions).each(function (data) {
+			var d = $.Deferred();
+			var url = magicast.resolveAndGetValue(data.asset);
+			if (Magicaster.actions[url] && typeof Magicaster.actions[url] === 'function') {
+				d.resolve();
+			}
+			else {
+				try {
+					require([url],
+						function (action) {
+							if (typeof action === 'function') {
+								Magicaster.console.log("[Trigger] action resolved", url, action);
+								Magicaster.actions[url] = action;
+								d.resolve();
+							}
+							else {
+								Magicaster.console.error("[Trigger] action resolve error: not a function", url, action);
+								Magicaster.actions[url] = function() {};
+								d.resolve();
+							}
+						},
+						function () {
+							Magicaster.console.error("[Trigger] action resolve error: action not found", url);
+							Magicaster.actions[url] = function() {};
+							d.resolve();
+						});
+				}
+				catch (e) {
+					Magicaster.console.error("[Trigger] action resolve error: exception", url, e);
+					Magicaster.actions[url] = function() {};
+					d.resolve();
+				}
+			}
+	
+			promises.push(d.promise());
+		});
+		
+		$.when.apply(window, promises).then(function () {
+			Magicaster.console.log('[Trigger] actions resolved', self);
+			loadDeferred.resolve();
+		});
+				
+	}
 
     return Trigger;
 });

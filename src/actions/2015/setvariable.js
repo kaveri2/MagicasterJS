@@ -26,7 +26,17 @@ define(function () {
 
     function setVariable(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/setVariable]", magicast, params, eventArgs);
-		magicast.resolveAndSetVariable(params.variable, magicast.resolveAndGetValue(params.value, eventArgs));
+		var name = magicast.resolveAndGetValue(params.variable.name, eventArgs);
+		var value = magicast.resolveAndGetValue(params.value, eventArgs);
+		// global level
+		if (magicast.resolveAndGetValue(params.variable.level, eventArgs) == "global") {
+			Magicaster.setGlobalVariable(name, value);
+		}
+		// local level
+		var magicasts = params.variable.magicast ? Magicaster.findMagicastsByName(magicast.resolveAndGetValue(params.variable.magicast, eventArgs)) : [magicast];
+		_.each(magicasts, function (magicast) {
+			magicast.setVariable(name, value);
+		});
     };
 
     return setVariable;
