@@ -34,8 +34,8 @@ define(["jquery"], function ($) {
 		}
 
 		var $content = layer.getContent();
-		// make the image fit layer's dimensions
-		var $image = $("<img draggable='false' style='position: absolute'>");
+		
+		var $image = $("<img draggable='false' style='position: absolute' />");
 		$content.append($image);
 		
 		if (data.asset) {
@@ -59,11 +59,23 @@ define(["jquery"], function ($) {
 		};
 
 		self.control = function(method, parameters, eventArgs) {
+			var $image2 = $("<img draggable='false' style='position: absolute' />").hide();
+			$content.append($image2);
+			$image2.get(0).onload = function (e) {
+				$image.remove();
+				$image = $image2;
+				$image.show();
+				layer.setGeometry({
+					width: $image.get(0).naturalWidth,
+					height: $image.get(0).naturalHeight
+				});
+				layer.dirty = true;
+			};
 			if (method=="setData") {
-				$image.attr({src: layer.resolveAndGetValue(parameters.value, eventArgs)});
+				$image2.attr({src: layer.resolveAndGetValue(parameters.value, eventArgs)});
 			}
 			if (method=="setAsset") {
-				$image.attr({src: layer.resolveAndGetValue(parameters.value, eventArgs)});
+				$image2.attr({src: layer.resolveAndGetValue(parameters.value, eventArgs)});
 			}
 		};
 		

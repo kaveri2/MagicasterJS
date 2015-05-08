@@ -39,10 +39,13 @@ define(["jquery", "utils/utils", "utils/audioctx"], function ($, Utils, AC) {
 		layer.getContent().append($audio);
 		
 		var cue = Utils.convertToArray(data, "cue");
-		_.each(cue, function (cue) {
-			cue.time = parseFloat(layer.resolveAndGetValue(cue.time));
-			cue.name = layer.resolveAndGetValue(cue.name);
-			cue.triggered = false;
+		var cues = [];
+		_.each(Utils.convertToArray(data, "cue"), function (cue) {
+			cues.push({
+				time: parseFloat(layer.resolveAndGetValue(cue.time)),
+				name: layer.resolveAndGetValue(cue.name),
+				triggered: false
+			});
 		});
 		var loop = layer.resolveAndGetValue(data.loop) == "true" || false;
 		var paused = layer.resolveAndGetValue(data.paused) == "true" || false;
@@ -140,7 +143,7 @@ define(["jquery", "utils/utils", "utils/audioctx"], function ($, Utils, AC) {
 		};
 
 		function checkCues(time) {
-			_.each(cue, function (cue) {
+			_.each(cues, function (cue) {
 				if (time > cue.time && !cue.triggered) {
 					layer.triggerEvent(cue.eventName);
 					cue.triggered = true;

@@ -27,14 +27,15 @@ define(function () {
     function cancelFullScreen(magicast, params, eventArgs) {
         Magicaster.console.log("[actions/cancelFullScreen]", magicast, params, eventArgs);
 		
-		if (document.webkitExitFullscreen) {
+		// exit full-screen
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+		} else if (document.webkitExitFullscreen) {
 			document.webkitExitFullscreen();
-		} else if (document.mozCancelFullscreen) {
-			document.mozCancelFullscreen();
+		} else if (document.mozCancelFullScreen) {
+			document.mozCancelFullScreen();
 		} else if (document.msExitFullscreen) {
 			document.msExitFullscreen();
-		} else if (document.exitFullscreen) {
-			document.exitFullscreen();
 		}
 	}
 

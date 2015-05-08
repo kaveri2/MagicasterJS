@@ -23,8 +23,8 @@
 
 (function () {
     "use strict";
-
-	var gaAccount = '';
+	
+	var gaAccount = 'UA-58687807-2';
 	window._gaq = window._gaq || [];
 	_gaq.push(
 		['_setAccount', gaAccount],
@@ -47,7 +47,7 @@
     var basePath = path.split('/').slice(0, -1).join('/') + "/";  // remove last filename part of path
 
     // Main minified file
-    var mainJs = basePath + "magicaster.min.js";
+    var mainJs = basePath + "magicaster.min-5.js";
 
     // Current version
     var version = "0.5";
@@ -99,7 +99,7 @@
 		valueResolvers: {
 		},
 		analytics: {
-			send: function(magicast, event, label, value = undefined) {
+			send: function(magicast, event, label, value) {
 				_gaq.push(
 					['_setAccount', gaAccount],
 					['_setDomainName', 'none'],
@@ -113,7 +113,7 @@
     //
 	
 	var console = config.debug ? window.console : { log: function() {} };
-	
+
 	// identical logic to Magicaster.loadJs
 	function loadJs(url, callback) {
 		var script = document.createElement("script");

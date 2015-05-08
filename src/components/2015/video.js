@@ -44,11 +44,13 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		var canPlay = $.Deferred();
 
 		var ignore = layer.resolveAndGetValue(data.controls) != "false" && video.setAttribute("controls", "controls");
-		var cue = Utils.convertToArray(data, "cue");
-		_.each(cue, function (cue) {
-			cue.time = parseFloat(layer.resolveAndGetValue(cue.time));
-			cue.name = layer.resolveAndGetValue(cue.name);
-			cue.triggered = false;
+		var cues = [];
+		_.each(Utils.convertToArray(data, "cue"), function (cue) {
+			cues.push({
+				time: parseFloat(layer.resolveAndGetValue(cue.time)),
+				name: layer.resolveAndGetValue(cue.name),
+				triggered: false
+			});
 		});
 		var loop = layer.resolveAndGetValue(data.loop) == "true";
 		var paused = layer.resolveAndGetValue(data.paused) == "true";
@@ -82,7 +84,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 
 		$video.on("timeupdate", function (e) {
 			var time = e.target.currentTime;
-			_.each(cue, function (cue) {
+			_.each(cues, function (cue) {
 				if (time > cue.time && !cue.triggered) {
 					if (cue.name) {
 						var args = {
@@ -99,7 +101,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		
 		$video.on("seeked", function (e) {
 			var time = e.target.currentTime;
-			_.each(cue, function (cue) {
+			_.each(cues, function (cue) {
 				if (time < cue.time) {
 					cue.triggered = false;
 				} else {
@@ -121,7 +123,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		});
 
 		$video.on("ended", function () {
-			_.each(cue, function (cue) {
+			_.each(cues, function (cue) {
 				cue.triggered = false;
 			});
 			if (loop) {

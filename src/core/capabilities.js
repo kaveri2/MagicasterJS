@@ -78,7 +78,7 @@ define(function () {
 			
 			capabilities["video"] = !capabilities["iPhone"] && !capabilities["iPod"];
 			
-			capabilities["fullscreen"] = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
+			capabilities["fullscreen"] = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled;
 		}
 
         /**

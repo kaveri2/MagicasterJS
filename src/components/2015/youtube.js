@@ -45,11 +45,13 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		var startTime = data.startTime !== undefined ? parseFloat(layer.resolveAndGetValue(data.startTime)) : undefined;
 		var endTime = data.endTime !== undefined ? parseFloat(layer.resolveAndGetValue(data.endTime)) : undefined;
 		var controls = layer.resolveAndGetValue(data.controls) == "true";
-		var cue = Utils.convertToArray(data, "cue");
-		_.each(cue, function (cue) {
-			cue.time = parseFloat(layer.resolveAndGetValue(cue.time));
-			cue.name = layer.resolveAndGetValue(cue.name);
-			cue.triggered = false;
+		var cues = [];
+		_.each(Utils.convertToArray(data, "cue"), function (cue) {
+			cues.push({
+				time: parseFloat(layer.resolveAndGetValue(cue.time)),
+				name: layer.resolveAndGetValue(cue.name),
+				triggered: false
+			});
 		});
 		var loop = layer.resolveAndGetValue(data.loop) == "true";
 		var preview = layer.resolveAndGetValue(data.preview) != "false";
@@ -173,7 +175,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		self.tick = function(time) {
 //			Magicaster.console.log("[YouTube] tick", time);
 			time = player.getCurrentTime();
-			_.each(cue, function (cue) {
+			_.each(cues, function (cue) {
 				if (time > cue.time && !cue.triggered) {
 					if (cue.name) {
 						var args = {
@@ -226,7 +228,6 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 					player.stopVideo();
 					break;
 				case "seek":
-					console.
 					player.seekTo(layer.resolveAndGetValue(parameters.time, eventArgs));
 					break;
 				case "setVolume":

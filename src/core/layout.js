@@ -21,7 +21,7 @@
  * Please contact us for an alternative licence
  */
 
-define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) {
+define(["jquery", "utils/utils", "verge"], function ($, Utils) {
     "use strict";
 
     $.ease = function (start, end, duration, easing, callback, completeFunction) {
@@ -87,97 +87,26 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
         self.debugger = null;
  
 		var dirty = true;
-        $(window).on("resize", function() {
-            dirty = true;
-        });
-		
 		self.dirty = function() {
 			dirty = true;
 		}
-
-        /**
-         * Updates a layers property, called by changeProperty action
-         * @param layer reference to the layer that should be updated
-         * @param params object containing the property that should be updated and the new value to use to calculate the new value
-         * @param eventArgs params passed from event
-         */
-        self.changeProperty = function (layer, property, value, ease, time, callback) {
-			
-			var target = layer || magicast;			
-			var targetProperties = target.getProperties();
-			
-			value = Utils.validatePropertyValue(property, value);
-
-			// if property is not number, it can't be animated
-			if (isNaN(value)) {
-				targetProperties[property] = value;
-                dirty = true;
-				if (callback) {
-					callback();
-				}
+		
+		function determineLayerDirty(layer) {
+			if (layer.dirty) {
 				return;
 			}
-			
-			// proceed to animation...
-            target.animations = target.animations || {};
-
-            var transition = {
-                easing: ease,
-                duration: time * 1000,
-                queue: false
-            };
-			
-			var startValue;
-
-            // custom handling for a property should be implemented like this if needed
-            if (property === "someCustomValueThatNeedsHandling") {
-                startValue = 0;
-                transition.step = function (now, tween) {
-                    /*Implement me*/
-                };
-            }
-
-            //if no custom handling is needed for a property we just calculate the changes, convert it to css and pass that to animate
-            else {
-                startValue = targetProperties[property] || 0;
-                transition.step = function (now) {
-                    targetProperties[property] = now;
-                };
-            }
-
-            var ts = function () {
-                transition.step.apply(this, arguments);
-                dirty = true;
-            };
-
-            var cf = callback ? callback : $.noop;
-
-            var ignore = target.animations[property] && target.animations[property].stop();
-
-            var anim = $.ease(
-                startValue || 0,
-                value,
-                transition.duration,
-                transition.easing,
-                ts,
-                cf
-            );
-
-            // Stored only to avoid duplicate overlapping animations.
-            target.animations[property] = anim;
-        };
-		
-		self.stopAnimations = function (layer) {
-			if (layer.animations) {
-				_.each(layer.animations, function(property, anim) {
-					if (anim && anim.stop) {
-						anim.stop();
+            var layerProperties = layer.getProperties();
+			if (layerProperties.refFrame) {
+				var refFrameLayer = magicast.findLayerByName(layerProperties.refFrame);
+				if (refFrameLayer) {
+					determineLayerDirty(refFrameLayer);
+					if (refFrameLayer.dirty) {
+						layer.dirty = true;
 					}
-				});
-				self.animations = null;
+				}
 			}
-		};
-
+		}
+		
         /**
          * Calculates the layer's properties, should be done every time a property changes
          * @param layer
@@ -186,16 +115,6 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
          */
         function calculateLayer(layer) {
 		
-			if (layer.calculated) return;
-			layer.calculated = true;
-
-            // If there is no viewport defined, use magicast's container for calculating the geometry
-            // When viewport is defined, only viewport layer uses magicast's container as source for calculations.
-            var $lcp = viewport && (viewport !== layer) ? viewport.getClipper() : magicast.$root;
-
-            layer.parentWidth = $lcp[0].clientWidth;
-            layer.parentHeight = $lcp[0].clientHeight;
-			
             var layerProperties = layer.getProperties();
             var layerCalculations = layer.getCalculations();
 			var layerComponent = layer.getComponent();
@@ -206,26 +125,30 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 			if (layerProperties.refFrame) {
 				refFrameLayer = magicast.findLayerByName(layerProperties.refFrame);
 				if (refFrameLayer) {
-					calculateLayer(refFrameLayer);
 					refFrameLayerCalculations = refFrameLayer.getCalculations();
 					refFrameLayerGeometry = refFrameLayer.getGeometry();
 				}
-			}
-
+			}		
+		
+            // If there is no viewport defined, use magicast's container for calculating the geometry
+            // When viewport is defined, only viewport layer uses magicast's container as source for calculations.
+            var $lcp = viewport && (viewport !== layer) ? viewport.getClipper() : magicast.$root;
+            var rw = $lcp[0].clientWidth;
+            var rh = $lcp[0].clientHeight;
             var w, h; // used in calculations
 			
             if (layerProperties.absWidth !== undefined) {
                 w = layerProperties.absWidth;
 			}
             if (layerProperties.relWidth !== undefined) {
-                w = (w ? w : 0) + layer.parentWidth * layerProperties.relWidth / 100;
+                w = (w ? w : 0) + rw * layerProperties.relWidth / 100;
             }
 			
             if (layerProperties.absHeight !== undefined) {
                 h = layerProperties.absHeight;
 			}
             if (layerProperties.relHeight !== undefined) {
-                h = (h ? h : 0) + layer.parentHeight * layerProperties.relHeight / 100;
+                h = (h ? h : 0) + rh * layerProperties.relHeight / 100;
             }
 			
 			if (refFrameLayer) {
@@ -324,7 +247,7 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             }
 			layerCalculations.x = 0;
             if (layerProperties.relX !== undefined) {
-                layerCalculations.x = layerCalculations.x + (layer.parentWidth ? layer.parentWidth / 100 * layerProperties.relX : 0);
+                layerCalculations.x = layerCalculations.x + (rw ? rw / 100 * layerProperties.relX : 0);
             }
             if (layerProperties.absX !== undefined) {
                 layerCalculations.x = layerCalculations.x + layerProperties.absX;
@@ -343,7 +266,7 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
             }
 			layerCalculations.y = 0;
             if (layerProperties.relY !== undefined) {
-                layerCalculations.y = layerCalculations.y + (layer.parentHeight ? layer.parentHeight / 100 * layerProperties.relY : 0);
+                layerCalculations.y = layerCalculations.y + (rh ? rh / 100 * layerProperties.relY : 0);
             }
             if (layerProperties.absY !== undefined) {
                 layerCalculations.y = layerCalculations.y + layerProperties.absY;
@@ -441,7 +364,25 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 					layerCalculations.y += dy;
 				}
             }
-        }
+		}
+		
+		function calculateAndRenderLayer(layer) {
+			if (!layer.dirty) {
+				return;
+			}
+			layer.dirty = false;
+			
+            var layerProperties = layer.getProperties();
+			if (layerProperties.refFrame) {
+				var refFrameLayer = magicast.findLayerByName(layerProperties.refFrame);
+				if (refFrameLayer) {
+					calculateAndRenderLayer(refFrameLayer);
+				}
+			}
+			
+			calculateLayer(layer);
+			renderLayer(layer);
+		}
 
         function checkLayerVisibility(layer) {
             //check if magicast is in viewport
@@ -514,24 +455,40 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
 				css["cursor"] = layerProperties.cursor ? layerProperties.cursor : "auto";
 				_.extend(css, Utils.generateCssVariants("transform-origin", "0px 0px 0px"));
 				_.extend(css, Utils.generateCssVariants("transform", "translateX(" + layerCalculations.x + "px) translateY(" + layerCalculations.y + "px) " + (layerProperties["accelerated"] ? "translateZ(0) " : "") + " rotate(" + layerCalculations.rotation + "deg) scaleX(" + (layerCalculations.width / layerGeometry.width * layerCalculations.scaleX) + ") scaleY(" + (layerCalculations.height / layerGeometry.height * layerCalculations.scaleY) + ") translateX(" + -layerCalculations.referenceX + "px) translateY(" + -layerCalculations.referenceY + "px)"));
-				_.extend(css, Utils.generateCssVariants("select", layerProperties.selectable ? "all" : "none"));
+				_.extend(css, Utils.generateCssVariants("user-select", layerProperties.selectable ? "all" : "none"));
 				elem.style.cssText = Utils.convertToCssString(css);
             }
 
             // Adjust clipper's opacity also
             layer.getClipper().get(0).style["opacity"] = elem.style["opacity"];
+			
+			if (magicast.debug) {
+				if (!magicast.debugger) {
+					require(["core/debugger"], function (Debugger) {
+						magicast.debugger = Debugger;
+						magicast.debugger.drawLayerDebug(magicast, layer);
+					});
+				}
+				else {
+					magicast.debugger.drawLayerDebug(magicast, layer);
+				}
+			}			
         }
 
+		var clipperDimensions;
+		
         /**
          * Layout manager update step.
          * TODO: Add more comments and description
          */
         self.update = function() {
-
-			// Check visibility events if defined in the properties
-			// Checking in every 5th step to increase performance
+		
+			var magicastProperties = magicast.getProperties();
+		
             _(magicast.getLayers()).each(function (layer) {
 				var layerProperties = layer.getProperties();
+				// Check visibility events if defined in the properties
+				// Checking in every 5th step to increase performance
                 if (layerProperties.triggerVisibilityEvents) {
                     if (!layer.visibilityCheckCount) {
                         layer.visibilityCheckCount = 5;
@@ -546,105 +503,93 @@ define(["jquery", "utils/utils", "jquery.easing", "verge"], function ($, Utils) 
                 }
             });
 		
-			if (!dirty) {
-				return;
-			}
-			dirty = false;
-
             // Find viewport and stage layers
-            if (!viewport) {
-                viewport = magicast.findLayerByName(magicast.getProperties()["viewport"]);
+            if (!viewport && magicastProperties["viewport"]) {
+                viewport = magicast.findLayerByName(magicastProperties["viewport"]);
             }
-            if (!stage) {
-                stage = magicast.findLayerByName(magicast.getProperties()["stage"]);
+            if (!stage && magicastProperties["stage"]) {
+                stage = magicast.findLayerByName(magicastProperties["stage"]);
             }
 			
-            var clipperDimensions = {
-				width: magicast.$root.width(),
-				height: magicast.$root.height()
-			};
-
-            // 1st check the viewport layer if defined and resize that
-            // 2nd resize magicast
-            // 3rd calculate scaling to the viewport (if needed)
-			if (viewport) {
-				resizeLayerClipper(viewport, clipperDimensions);
-				var calcs = viewport.getCalculations();
-				magicast.$viewport.width(calcs.width).height(calcs.height);
-				magicast.$root.width(calcs.width).height(calcs.height);
+			if (viewport && viewport.dirty) {
+				dirty = true;
 			}
-			if (magicast.scalingDims) {
-				var vp = magicast.$viewport[0];
 			
-				var minWidth = magicast.scalingDims.minWidth;
-				var maxWidth = magicast.scalingDims.maxWidth;
-				var minHeight = magicast.scalingDims.minHeight;
-				var maxHeight = magicast.scalingDims.maxHeight;
-
-				var w = vp.clientWidth;
-				var h = vp.clientHeight;
-				var min,args;
-				if (w < minWidth || h < minHeight) {
-					args = _.filter([w/minWidth,h/minHeight], function(num) { return !isNaN(num); });
-					min = _.min(args);
-					scale = min;
+			if (dirty) {
+				// 1st check the viewport layer if defined and resize that
+				// 2nd resize magicast
+				// 3rd calculate scaling to the viewport (if needed)
+				if (viewport) {
+					magicast.$viewport.width(0).height(0);
+					calculateLayer(viewport);
+					viewport.dirty = true;
+					var calcs = viewport.getCalculations();
+					magicast.$viewport.width(calcs.width).height(calcs.height);
 				}
-				else if(w > maxWidth || h > maxHeight){
-					args = _.filter([w/maxWidth,h/maxHeight], function(num) { return !isNaN(num); });
-					min = _.min(args);
-					scale = min;
-				}
-				else {
-					scale = 1;
-				}
+				if (magicast.scalingDims) {
+					var vp = magicast.$viewport[0];
 				
-				// Set size to match calculated value
-				var css = {
-					width: w/min + "px",
-					height: h/min + "px"
-				};
-				_.extend(css, Utils.generateCssVariants("transform-origin", "0px 0px"), Utils.generateCssVariants("transform", "scale(scale)"));
-				vp.style.cssText = Utils.convertToCssString(css);
-			}				
-			if (viewport) {
-                clipperDimensions = {
-					width: (viewport.getCalculations().width / scale),
-					height: (viewport.getCalculations().height / scale)
-				};
-			}			
+					var minWidth = magicast.scalingDims.minWidth;
+					var maxWidth = magicast.scalingDims.maxWidth;
+					var minHeight = magicast.scalingDims.minHeight;
+					var maxHeight = magicast.scalingDims.maxHeight;
 
-            // When magicast-level divs and containers have been refressed (if needed), loop through the layers
-            // and do similar actions per each layer.
-            // 1st calculate new dimensions per each layer (including the layer specific clipper updates)
-            // 2nd actually "draw" the layout (~ set the CSS properties in place)
-            // 3rd check the visiblity for those layers that define such property
-
-            _(magicast.getLayers()).each(function (layer) {
-				layer.calculated = false;
-			});
-			
-            // Then loop through all the layers
-            _(magicast.getLayers()).each(function (layer) {
-			
-                // In case there was a resize, resize also all the layers
-                resizeLayerClipper(layer, clipperDimensions);
-
-				calculateLayer(layer);
-				
-				renderLayer(layer);
-				
-				if (magicast.debug) {
-					if (!magicast.debugger) {
-						require(["core/debugger"], function (Debugger) {
-							magicast.debugger = Debugger;
-							magicast.debugger.drawLayerDebug(magicast, layer);
-						});
+					var w = vp.clientWidth;
+					var h = vp.clientHeight;
+					var min,args;
+					if (w < minWidth || h < minHeight) {
+						args = _.filter([w/minWidth,h/minHeight], function(num) { return !isNaN(num); });
+						min = _.min(args);
+						scale = min;
+					}
+					else if(w > maxWidth || h > maxHeight){
+						args = _.filter([w/maxWidth,h/maxHeight], function(num) { return !isNaN(num); });
+						min = _.min(args);
+						scale = min;
 					}
 					else {
-						magicast.debugger.drawLayerDebug(magicast, layer);
+						scale = 1;
 					}
+					
+					// Set size to match calculated value
+					var css = {
+						width: w/min + "px",
+						height: h/min + "px"
+					};
+					_.extend(css, Utils.generateCssVariants("transform-origin", "0px 0px"), Utils.generateCssVariants("transform", "scale(scale)"));
+					vp.style.cssText = Utils.convertToCssString(css);
+				}				
+				if (viewport) {
+					clipperDimensions = {
+						width: (viewport.getCalculations().width / scale),
+						height: (viewport.getCalculations().height / scale)
+					};
+				} else {
+					clipperDimensions = {
+						width: magicast.$root[0].clientWidth,
+						height: magicast.$root[0].clientHeight
+					};
+				}
+			}
+
+			// resolve if layer should be considered dirty (or clipper resized)
+            _(magicast.getLayers()).each(function (layer) {
+				if (dirty) {
+					layer.dirty = true;
+					resizeLayerClipper(layer, clipperDimensions);
+				} else {			
+					determineLayerDirty(layer);
+				}
+			});
+			
+			// calculate and render layers that are dirty
+            _(magicast.getLayers()).each(function (layer) {
+				if (layer.dirty) {
+					calculateAndRenderLayer(layer);
 				}
             });
+			
+			dirty = false;			
         };
     }
 

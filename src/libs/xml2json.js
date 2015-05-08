@@ -159,7 +159,7 @@ function X2JS(config) {
 			
 			if(result.__text!=null || result.__cdata!=null) {
 				result.toString = function() {
-					return (this.__text!=null? this.__text:'')+( this.__cdata!=null ? this.__cdata:'');
+					return (this.__text!=null?(this.__text.join!=null?this.__text.join(''):this.__text):'')+( this.__cdata!=null?(this.__cdata.join!=null?this.__cdata.join(''):this.__cdata):'');
 				};
 			}
 			return result;

@@ -24,14 +24,14 @@
 define(["utils/utils"], function (Utils) {
     "use strict";
 
-	function changeProperty(magicast, params, eventArgs) {
-        Magicaster.console.log("[actions/changeProperty]", magicast, params, eventArgs);
+	function changeCssProperty(magicast, params, eventArgs) {
+        Magicaster.console.log("[actions/changeCssProperty]", magicast, params, eventArgs);
 
 		var name = magicast.resolveAndGetValue(params.property.name, eventArgs);
+		var selector = magicast.resolveAndGetValue(params.property.selector, eventArgs);
 		var value = magicast.resolveAndGetValue(params.value, eventArgs);
 		var ease = magicast.resolveAndGetValue(params.ease, eventArgs);
 		var time = magicast.resolveAndGetValue(params.time, eventArgs);
-		var speed = magicast.resolveAndGetValue(params.speed, eventArgs);
 		var callback = params.completeEvent ? function () {
 			magicast.resolveAndTriggerEvent(params.completeEvent, eventArgs);
 		} : null;
@@ -40,13 +40,13 @@ define(["utils/utils"], function (Utils) {
 			if (params.property.layer) {
 				var l = m.findLayerByName(magicast.resolveAndGetValue(params.property.layer, eventArgs));
 				if (l) {
-					l.animateProperty(name, value, ease, params.time !== undefined ? time : speed, callback);
+					l.animateCssProperty(selector, name, value, ease, time, callback);
 				}
 			} else {
-//				m.animateProperty(name, value, ease, params.time !== undefined ? time : speed, callback);
+//				m.animateCssProperty(selector, name, value, ease, time, callback);
 			}
 		});
 	};
 
-    return changeProperty;
+    return changeCssProperty;
 });

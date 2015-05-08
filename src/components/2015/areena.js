@@ -47,7 +47,14 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		var startTime = data.startTime !== undefined ? parseFloat(data.startTime) : undefined;
 		var endTime = data.endTime !== undefined ? parseFloat(data.endTime) : undefined;
 		var controls = layer.resolveAndGetValue(data.controls) !== "false";
-		var cue = Utils.convertToArray(data, "cue");
+		var cues = [];
+		_.each(Utils.convertToArray(data, "cue"), function (cue) {
+			cues.push({
+				time: parseFloat(layer.resolveAndGetValue(cue.time)),
+				name: layer.resolveAndGetValue(cue.name),
+				triggered: false
+			});
+		});
 		var loop = layer.resolveAndGetValue(data.loop) == "true";
 		var preview = layer.resolveAndGetValue(data.preview) != "false";
 		var paused = layer.resolveAndGetValue(data.paused) == "true";
@@ -151,7 +158,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 			}
 			if (player) {
 				var time = player.getTime();
-				_.each(cue, function (cue) {
+				_.each(cues, function (cue) {
 					if (time > parseFloat(cue.time) && !cue.triggered) {
 						if (cue.name) {
 							var args = {

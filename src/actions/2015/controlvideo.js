@@ -24,7 +24,7 @@
 define(["jquery", "utils/utils"], function ($, Utils) {
     "use strict";
 
-	function controlVideo(magicast, params, eventArgs) {
+	function control(magicast, params, eventArgs) {
 	
 		var layer = magicast.findLayerByName(magicast.resolveAndGetValue(params.layer, eventArgs));
 		var component = layer ? layer.getComponent() : null;
@@ -34,5 +34,5 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 		
 	}
 
-    return controlVideo;
+    return control;
 });

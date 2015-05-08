@@ -42,9 +42,11 @@
         "actions/2015/applycollisiondetectiongroup",
         "actions/2015/cancelfullscreen",
         "actions/2015/captureimage",
+        "actions/2015/changecssproperty",
         "actions/2015/changenode",
         "actions/2015/changeproperty",
         "actions/2015/controlaudio",
+        "actions/2015/controlbox",
         "actions/2015/controlimage",
         "actions/2015/controltext",
         "actions/2015/controlvideo",
@@ -76,13 +78,10 @@
 		'requirelib': "libs/require",
 		'jquery': "libs/jquery-2.0.3",
 		'jquery.easing': "libs/jquery.easing.1.3",
+		'jquery.color': "libs/jquery.color.plus-names-2.1.2",
 		'lodash': "libs/lodash",
-		'extend': "libs/extend",
 		'verge': "libs/verge",
-		//'pixi': "libs/pixi.dev",
-		//'html2canvas': "libs/html2canvas",
-		'binaryajax': "libs/binaryajax",
-		'exif': "libs/exif",
+		'html2canvas': "libs/html2canvas",
 		'fpsmeter': "libs/fpsmeter",
 		'webfont': "libs/webfont"
     },
@@ -90,30 +89,15 @@
 		'jquery.easing': {
 			deps: ['jquery']
 		},
-        'extend': {
-            exports: 'BaseClass'
-        },
+		'jquery.color': {
+			deps: ['jquery']
+		},
         'verge': {
             exports: 'verge'
         },
-       /* 'html2canvas': {
-            exports: 'html2canvas'
-        },
-        'pixi': {
-            exports: 'pixi'
-        }, */
-        'binaryajax': {
-            exports: 'Asd',
-            init: function () {
-                return{
-                    BinaryFile: this.BinaryFile,
-                    BinaryAjax: this.BinaryAjax
-                };
-            }
-        },
-        'exif': {
-            exports: 'EXIF'
-        },
+		'html2canvas': {
+			exports: 'html2canvas'
+		},
         'fpsmeter': {
             exports: "FPSMeter"
         },

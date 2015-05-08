@@ -30,108 +30,110 @@ define(["jquery"], function ($) {
 
 		var self = this;
 		
-		var $content = layer.getContent();
-		var $text = $("<span></span>");
-		$content.append($text);
-		
 		var scale = layer.resolveAndGetValue(data.scale);
 		if (scale == "true") scale = "both";
 		if (!scale || scale == "false") scale = "none";
 		var wordWrap = layer.resolveAndGetValue(data.wordWrap) === "true";
-		var clip = layer.resolveAndGetValue(data.clip) !== "false";
-
-		var color = layer.resolveAndGetValue(data.color);
-		var fontFamily = layer.resolveAndGetValue(data.fontFamily);
-		var fontSize = layer.resolveAndGetValue(data.fontSize);
-		var align = layer.resolveAndGetValue(data.align);
-		var lineHeight = layer.resolveAndGetValue(data.lineHeight);
-		var letterSpacing = layer.resolveAndGetValue(data.letterSpacing);
-		var decoration = layer.resolveAndGetValue(data.decoration);
 		
+		var $content = layer.getContent();
 		$content.css({
 			"position": "relative",
-			"overflow": clip ? "hidden" : "visible",
-			"width": "100%",
-			"height": "100%",
+			"font-family": (data.fontFamily ? layer.resolveAndGetValue(data.fontFamily) : undefined),
+			"font-size": (data.fontSize ? "" + layer.resolveAndGetValue(data.fontSize) : undefined),
+			"color": (data.color ? "" + layer.resolveAndGetValue(data.color) : undefined),
+			"text-align": (data.align ? "" + layer.resolveAndGetValue(data.align) : undefined),
+			"line-height": (data.lineHeight ? "" + layer.resolveAndGetValue(data.lineHeight) : undefined),
+			"letter-spacing": (data.letterSpacing ? "" + layer.resolveAndGetValue(data.letterSpacing) : undefined),
+			"decoration": (data.decoration ? "" + layer.resolveAndGetValue(data.decoration) : undefined)
 		});
-		
+
+		var $text = $("<span></span>");
+
+		$text.css({
+			"display": "inline-block",
+			"text-align": "inherit",
+			"-webkit-user-select": "inherit",
+			"-khtml-user-select": "inherit",
+			"-moz-user-select": "inherit",
+			"-ms-user-select": "inherit",
+			"user-select": "inherit"
+		});
+		$content.append($text);
+				
 		var nativeGeometry;
 		var nativeAspectRatio;
-		function setText(text) {
+		function calculateNativeGeomerty() {
 			$text.css({
-				"display": "inline-block",
 				"white-space": "pre",
-				"font-family": (fontFamily ? fontFamily : "inherit"),
-				"font-size": (fontSize ? "" + fontSize : "inherit"),
-				"color": (color ? "" + color : "inherit"),
-				"line-height": (lineHeight ? "" + lineHeight : "inherit"),
-				"text-align": (align ? "" + align : "inherit"),
-				"letter-spacing": (letterSpacing ? "" + letterSpacing : "inherit"),
-				"decoration": (decoration ? "" + decoration : "inherit")
+				"width": "auto"
 			});
-			text = text || "";
-			text = text.toString();
-			var regExp = new RegExp("<br\\s*/>", "gi");
-			text = text.replace(regExp, "\n");
-			$text.html(text);
 			nativeGeometry = {
 				width: $text.outerWidth(true),
 				height: $text.outerHeight(true)
 			};
 			nativeAspectRatio = nativeGeometry.width / nativeGeometry.height;
 			$text.css({
-				"position": "absolute",
-				"display": "inline-block",
-				"white-space": (wordWrap ? "pre-wrap" : "pre"),
-				"font-family": (fontFamily ? fontFamily : "inherit"),
-				"font-size": (fontSize ? "" + fontSize + "px" : "inherit"),
-				"color": (color ? "" + color : "inherit"),
-				"line-height": (lineHeight ? "" + lineHeight : "inherit"),
-				"align": (align ? "" + align : "inherit"),
-				"letter-spacing": (letterSpacing ? "" + letterSpacing : "inherit"),
-				"decoration": (decoration ? "" + decoration : "inherit")
+				"white-space": (wordWrap ? "pre-wrap" : "pre")
 			});
+		}
+		
+		function setText(text) {
+			text = text || "";
+			text = text.toString();
+			var regExp = new RegExp("<br\\s*/>", "gi");
+			text = text.replace(regExp, "\n");
+			$text.html(text);
+			calculateNativeGeomerty();
+			layer.dirty = true;
 		}
 
 		self.start = function() {
 			setText(layer.resolveAndGetValue(data.text));
 		};
 					
-		self.adjust =  function(width, height, aspectRatio) {		
-		
-			var geometry = nativeGeometry;
-			
+		self.adjust =  function(width, height, aspectRatio) {					
+			var geometry;
 			if (wordWrap) {
 				var ratio = (width !==undefined && height !== undefined ? width / height : (aspectRatio ? aspectRatio : undefined));
-				// use clever width adjustment if native shape is wider than target shape
-				if (ratio && ratio < nativeAspectRatio && scale !== "none" && scale !== "up") {
-					var attempts = 0;
-					var low = ratio / nativeAspectRatio;
-					var high = 1;
-					var result = high;
-					while (attempts < 3) {
-						$text.width(geometry.width * (low + high) / 2);
-						var r = $text.outerWidth(true) / $text.outerHeight(true);
-						if (ratio < r) {
-							low = ratio / r; 
-						} else {
-							result = high = ratio / r;
+				var clever = false;
+				if (ratio && scale !== "none" && scale !== "up") {
+					calculateNativeGeomerty();
+					// use clever width adjustment if native shape is wider than target shape
+					if (ratio < nativeAspectRatio) {
+						clever = true;
+						var attempts = 0;
+						var low = ratio / nativeAspectRatio;
+						var high = 1;
+						var r_high = nativeAspectRatio;
+						while (attempts < 3) {
+							$text.outerWidth(nativeGeometry.width * low);
+							var r_low = $text.outerWidth(true) / $text.outerHeight(true);
+							if (Math.abs(r_high - ratio) < Math.abs(r_low - ratio)) {
+								low = (low + low + high) / 3;
+							} else {
+								high = (low + high + high) / 3;
+								$text.outerWidth(nativeGeometry.width * high);
+								r_high = $text.outerWidth(true) / $text.outerHeight(true);
+							}
+							attempts++;
 						}
-						attempts++;
+						$text.outerWidth(nativeGeometry.width * high);
 					}
 				}
-				else {
+				if (!clever) {
 					if (scale !== "none" && scale !== "up") {
-						$text.width(geometry.width);
+						$text.outerWidth(nativeGeometry.width);
 					}
 					else {
-						$text.width(Math.min(geometry.width, width ? width : 0));
+						$text.outerWidth(Math.min(nativeGeometry.width, width ? width : 0));
 					}
 				}
 				geometry = {
 					width: $text.outerWidth(true),
 					height: $text.outerHeight(true)
 				};
+			} else {
+				geometry = nativeGeometry;				
 			}
 
 			// tell magicast the real dimensions so it can scale the content

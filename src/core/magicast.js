@@ -83,7 +83,7 @@ define(["jquery",
             var nodes;
 			
 			self.getId = function() {
-				return self.id || 0; 
+				return magicast.id || 0; 
 			}
 
 			self.getName = function() {
@@ -343,7 +343,7 @@ define(["jquery",
                         }
                     }
                     else {  // overwrite === true -- always create a new layer
-                        log("[Magicast] Creating new layer", layerData);
+                        log("[Magicast] Overwriting or creating new layer", layerData);
 						layer = new Layer(layerData, self);
                     }
 					if (layer) {
@@ -415,6 +415,17 @@ define(["jquery",
             self.resolveAndBindEventListener = function (params, callback) {
                 return Magicaster.resolveAndBindEventListener(self, null, params, callback);
             };
+			
+			function validatePropertyValue(name, value) {
+				if ($.inArray(name, [])) {
+					return value === "true";
+				};
+				var floatValue = parseFloat(value);	
+				if (!isNaN(floatValue)) {
+					return floatValue;
+				}
+				return value;
+			}		
 
             /**
              * Change node
@@ -480,6 +491,10 @@ define(["jquery",
 								properties[self.resolveAndGetValue(newProperty.name)] = self.resolveAndGetValue(newProperty.value);
 							});
 							
+							_(properties).each(function(value, property) {
+								properties[property] = validatePropertyValue(property, value);
+							});
+							
 							// remove old layers
 							_(oldLayers).each(function(layer) {
 								layer.destroy();
@@ -529,9 +544,11 @@ define(["jquery",
                                 Magicaster.enablePerformanceMeter();
                             }
 
+							/*
 							if (Magicaster.configuration.analytics) {
 								Magicaster.configuration.analytics.send(self, "nodeChanged", self.resolveAndGetValue(data.name));
 							}
+							*/
 
                             // Fire public nodeChanged event
                             var magicastElem = self.$root[0]; // Magicast container

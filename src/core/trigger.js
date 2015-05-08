@@ -143,9 +143,12 @@ define(["jquery", "utils/utils"], function ($, Utils) {
          */
         self.execute = function (eventArgs) {
 		
-            if (condition && !magicast.resolveAndGetValue(condition, eventArgs)) {
-                Magicaster.console.log("[Trigger] execute, but conditions are not met", self, eventArgs);
-                return;
+            if (condition) {
+				var b = magicast.resolveAndGetValue(condition, eventArgs);
+				if (b === null || b === false || b === 0 || b === "false") {
+					Magicaster.console.log("[Trigger] execute, but conditions are not met", self, eventArgs);
+					return;
+				}
             }
 
 			Magicaster.console.log("[Trigger] execute", self, eventArgs);
@@ -169,8 +172,21 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 				function run() {
 					var url = magicast.resolveAndGetValue(data.asset, eventArgs);
 					var action = Magicaster.actions[url];
-					if (action && (!data.condition || magicast.resolveAndGetValue(data.condition, eventArgs))) {
-						action.call(null, magicast, data.parameters, eventArgs);
+					if (action) {
+						var b = true;
+						if (data.condition) {
+							b = magicast.resolveAndGetValue(data.condition, eventArgs);
+							if (b === null || b === false || b === 0 || b === "false") {
+								b = false;
+							}
+						}
+						if (b) {
+							try {
+								action.call(null, magicast, data.parameters, eventArgs);
+							} catch (e) {
+								Magicaster.console.error("[Trigger] action exception", action, e);
+							}
+						}
 					}
 				}
 				

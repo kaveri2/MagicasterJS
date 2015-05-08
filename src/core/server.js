@@ -249,6 +249,14 @@ define(["jquery",
             }
 
             function send(data) {
+			
+				if (!Magicaster.configuration.server.url) {
+					firstRequest = false;
+					cancelBufferTimer();
+					methodCalls = [];
+					return;
+				}
+			
                 Magicaster.console.log("[Server] send", data);
 
                 firstRequest = false;
@@ -258,7 +266,7 @@ define(["jquery",
                 methodCalls = [];
 
                 ajaxSettings.data = data;
-                ajaxSettings.url = Magicaster.configuration.server.uri;
+                ajaxSettings.url = Magicaster.configuration.server.url;
                 $.ajax(ajaxSettings)
                     .done(function (returnData) {
                         Magicaster.console.log("[Server] ajax done", returnData);

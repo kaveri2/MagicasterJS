@@ -66,29 +66,6 @@ define(["jquery", "lodash"], function ($, _) {
             name = name.replace(/\s/g, "_");
             return name;
         }
-		
-		function validatePropertyValue(property, value) {
-			if (property=="visible" ||
-				property=="enablePointer" ||
-				property=="selectable" ||
-				property=="draggable" ||
-				property=="accelerated" ||
-				property=="triggerVisibilityEvents" ||
-				property=="refFrameAnchorX" ||
-				property=="refFrameAnchorY" ||
-				property=="refFrameAnchorScaleX" ||
-				property=="refFrameAnchorScaleY" ||
-				property=="refFrameAnchorRotation" ||
-				property=="refFrameAnchorAlpha" ||
-				false) {
-				return value === "true";
-			};
-			var floatValue = parseFloat(value);	
-			if (!isNaN(floatValue)) {
-				return floatValue;
-			}
-			return value;
-		}		
 
         /**
          * A method used to make an element draggable, can be used on any html element or magicast layer.
@@ -154,14 +131,14 @@ define(["jquery", "lodash"], function ($, _) {
                     y = y > maxY ? maxY : y;
                 }
                 wrap.data({
-                    dragX: x,
-                    dragY: y
+                    moveX: x,
+                    moveY: y
                 });
                 if (layer) {
 					var layerProperties = layer.getProperties();
-					layerProperties.dragX = x;
-					layerProperties.dragY = y;
-					layer.getObject().layout.dirty();
+					layerProperties.moveX = x;
+					layerProperties.moveY = y;
+					layer.dirty = true;
                 }
                 else {
                     wrap.css({
@@ -346,7 +323,6 @@ define(["jquery", "lodash"], function ($, _) {
         return {
             convertToArray: convertToArray,
             validateName: validateName,
-            validatePropertyValue: validatePropertyValue,
             convertArrayToKeyValue: convertArrayToKeyValue,
             addDragSupport: addDragSupport,
             dispatchEvent: dispatchEvent,

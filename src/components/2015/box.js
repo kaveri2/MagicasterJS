@@ -25,9 +25,80 @@
 define(["jquery"], function ($) {
     "use strict";
 
-    function Fill(data, layer) {
+    function Box(data, layer) {
+	
+		var self = this;
+
+		var loadDeferred = $.Deferred();
+		self.getLoadPromise = function() {
+			return loadDeferred.promise();
+		}
+		
 		var $content = layer.getContent();
+		
+		var backgroundImage;
+		if (data.textureAsset) {
+			backgroundImage = layer.resolveAndGetValue(data.textureAsset);
+		} else if (data.data) {
+			backgroundImage = layer.resolveAndGetValue(data.textureData);
+		} else {
+			loadDeferred.resolve();
+		}
+		
+		if (backgroundImage) {
+			var $image = $("<img />");
+			$content.append($image);
+			$image.attr({src: backgroundImage});
+			$image.get(0).onload = function (e) {	
+				$image.remove();
+				$image = null;
+				loadDeferred.resolve();
+			};
+			$image.get(0).onerror = function (e) {
+				$image.remove();
+				$image = null;
+				loadDeferred.reject();
+			};
+		}
+		
+		var width;
+		var widthSet = false;
+		if (data.width) {
+			width = parseFloat(layer.resolveAndGetValue(data.width));
+			$content.width(width);
+			widthSet = true;
+		}
+		var height;
+		var heightSet = false;
+		if (data.height) {
+			height = parseFloat(layer.resolveAndGetValue(data.height));
+			$content.height(height);
+			heightSet = true;
+		}
+		
+		self.adjust =  function(w, h, ar) {		
+			if (!widthSet) {
+				$content.width(w);
+			}
+			if (!heightSet) {
+				$content.height(h);
+			}
+			layer.setGeometry({
+				width: widthSet ? width : w,
+				height: heightSet ? height : h
+			});
+		};		
+		
+		$content.css({
+			"box-sizing": "border-box",
+			"background-color": (data.color ? "" + layer.resolveAndGetValue(data.color) : undefined),
+			"background-image": (backgroundImage ? backgroundImage : undefined),
+			"background-position": (data.texturePosition ? "" + layer.resolveAndGetValue(data.texturePosition) : undefined),
+			"border": (data.border ? "" + layer.resolveAndGetValue(data.border) : undefined),
+			"border-radius": (data.borderRadius ? "" + layer.resolveAndGetValue(data.borderRadius) : undefined)
+		});
+		
     };
 
-    return Fill;
+    return Box;
 });

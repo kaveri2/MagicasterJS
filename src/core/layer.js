@@ -38,7 +38,9 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
             throw new TypeError("Constructor cannot be called as a function.");
         }
 		
-        var self = this;		
+        var self = this;
+
+		self.dirty = true;
 
 		/**
 		 * Method for getting value from XML-based value syntax
@@ -146,7 +148,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
         });
 		
 		_(properties).each(function(value, property) {
-			properties[property] = Utils.validatePropertyValue(property, value);
+			properties[property] = validatePropertyValue(property, value);
 		});
 		
         // Default layer properties
@@ -181,7 +183,8 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 			draggable: false,
 			enablePointer: true,
 			accelerated: false,
-			selectable: false
+			selectable: false,
+			cursor: "default"
         });
 		
 		/**
@@ -231,15 +234,113 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
          * @param value {Object} New geometry object
 		 */
 		self.setGeometry = function(value) {
+			/*
 			if (geometry.width != value.width || geometry.height != value.height) {
-				magicast.layout.dirty();
+				self.dirty = true;
 			}
+			*/
 			geometry = value;
 		};
 		
-		// For Layout
-        self.transforms = {};
+		function validatePropertyValue(name, value) {
+			if ($.inArray(name, ["visible", "enablePointer", "selectable", "draggable", "accelerated", "triggerVisibilityEvents", "refFrameAnchorX", "refFrameAnchorY", "refFrameAnchorScaleX", "refFrameAnchorScaleY", "refFrameAnchorRotation", "refFrameAnchorAlpha"]) != -1) {
+				return value === "true";
+			};
+			var floatValue = parseFloat(value);	
+			if (!isNaN(floatValue)) {
+				return floatValue;
+			}
+			return value;
+		}		
+		
+		var animations = {};
+		self.animateProperty = function(name, value, ease, time, callback, speed) {
+						
+			/*
+			var makesDirty = $.inArray(name, [
+				"relX", "absX", "relReferenceX", "absReferenceX", "relWidth", "absWidth", "selfRelX", "scaleX", "moveX",
+				"relY", "absY", "relReferenceY", "absReferenceY", "relHeight", "absHeight", "selfRelY", "scaleY", "moveY",
+				"rotation", "alpha", "maintainAspectRatio",
+				"refFrame", "refFrameAnchorRotation", "refFrameAnchorAlpha",
+				"refFrameAnchorX", "refFrameAnchorWidth", "refFrameAnchorScaleX",
+				"refFrameRelX", "refFrameAbsX", "refFrameRelWidth", "refFrameAbsWidth", "refFrameSelfRelX",
+				"refFrameAnchorY", "refFrameAnchorHeight", "refFrameAnchorScaleY",
+				"refFrameRelY", "refFrameAbsY", "refFrameRelHeight", "refFrameAbsHeight", "refFrameSelfRelY"
+			]) != -1;
+			*/
+			
+			var makesDirty = true;
+			
+			value = validatePropertyValue(name, value);
+			
+			// if property is not number, it can't be animated
+			if (typeof value != "number") {
+				properties[name] = value;
+                if (makesDirty) {
+					self.dirty = true;
+				}
+				if (callback) {
+					callback();
+				}
+				return;
+			}
 
+			var startValue = properties[name] || 0;
+			
+			var step;
+			if (makesDirty) {
+				step = function (now) {
+                    properties[name] = now;
+					self.dirty = true;
+				};
+			} else {
+				step = function (now) {
+                    properties[name] = now;
+				};
+			}
+
+            if (animations["property_" + name]) {
+				animations["property_" + name].stop();
+			}
+			// stored only to avoid duplicate overlapping animations
+            animations["property_" + name] = $.ease(
+                startValue || 0,
+                value,
+                (speed ? Math.abs(startValue - value) / time : time) * 1000,
+                ease,
+                step,
+                callback ? callback : $.noop
+            );
+		}
+		self.animateCssProperty = function(selector, name, value, ease, time, callback) {						
+		
+			var makesDirty = true;
+		
+			var properties = {};
+			properties[name] = value;			
+
+            if (animations["css_" + selector + "_" + name]) {
+				animations["css_" + selector + "_" + name].stop();
+			}
+			
+			var $target = selector  ? $content.find(selector) : $content;
+						
+			// stored only to avoid duplicate overlapping animations
+            animations["css_" + selector + "_" + name] = $target.animate(
+                properties,
+                {
+					duration: time * 1000,
+					easing: ease,
+					step: makesDirty ? function() {
+						self.dirty = true;
+					} : $.noop,
+					complete: callback ? callback : $.noop
+				}
+            );
+			
+			// TODO: apply css when calculating dirty layer, to stop flickering!
+		};
+		
         // Asynchronously loads required component JavaScript using RequireJS methods
         function initializeComponent(asset, params) {
 		
@@ -388,8 +489,6 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 				component.destroy();
 			}
 			
-			magicast.layout.stopAnimations(self);
-
             $content.remove();
             $container.remove();
             $clipper.remove();
@@ -429,7 +528,7 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 
         /**
          * Adds given CSS text to the content element.
-         * @name Layer#setCssStyle
+         * @name Layer#setCssText
 		 * @public
          * @method
 		 * @param cssText {Object} CSS style definition object
@@ -518,10 +617,10 @@ define(["jquery", "utils/utils", "core/capabilities"], function ($, Utils, Capab
 			if (data.css.class) {
 				self.addCssClass(self.resolveAndGetValue(data.css.class));
 			}
-			if (data.css.style) {
-				self.setCssStyle(self.resolveAndGetValue(data.css.style));
+			if (data.css.text) {
+				self.setCssText(self.resolveAndGetValue(data.css.text));
 			}
-		}		
+		}
 
 		$.when(loadDeferred).then(function () {
 			/**

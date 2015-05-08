@@ -27,11 +27,12 @@ define(["jquery",
         "core/server",
         "core/capabilities",
         "utils/keyevents",
-        "extend",
         "lodash",
         "utils/utils",
-        "fpsmeter"],
-    function ($, XmlParser, Debugger, Server, Capabilities, KeyEvents, BaseClass, _, Utils, FPSMeter) {
+        "fpsmeter",
+		"jquery.easing", 
+		"jquery.color"],
+    function ($, XmlParser, Debugger, Server, Capabilities, KeyEvents, _, Utils, FPSMeter) {
         "use strict";
 
         (function () {
@@ -89,7 +90,7 @@ define(["jquery",
                 debug: true,
                 clientName: "",
                 server: {
-                    "uri": "",
+                    "url": "",
                     bufferTime: 100
                 },
                 valueResolvers: {
@@ -512,9 +513,9 @@ define(["jquery",
                     var data = el.data("magicaster-magicast-xml");
                     // XML embedded
                     if (!data) {
-                        var val = el.find("textarea").val();
+                        var val = "<xml>" + el.find("textarea").val() + "</xml>";
                         if (val) {
-                            data = XmlParser.parseXmlData(val);
+                            data = XmlParser.parseXmlData(val).xml;
                         }
                         el.find("textarea").remove();
                         Magicaster.console.log("[Magicaster] XML from textarea", data);
@@ -526,7 +527,7 @@ define(["jquery",
                         XmlParser.parseAsync(data)
                             .done(function (data) {
                                 Magicaster.console.log("[Magicaster] XML from file", data);
-                                createMagicast({'data': data}, container).done(function () {
+                                createMagicast(data, container).done(function () {
                                     d.resolve();
                                 });
                             })
@@ -629,10 +630,8 @@ define(["jquery",
                     });
                 });
 				
-				var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
-				
-				$(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange', function(e) {
-					var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+				$(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange', function(e) {
+					var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
 					
 					triggerGlobalEvent("fullscreen_change");
 					if (fullscreenElement) {
@@ -654,13 +653,22 @@ define(["jquery",
 							triggerGlobalEvent("fullscreen_exit");
 						}
 					});
-
+				
+					setTimeout(function() {
+						triggerGlobalEvent("resize");
+						calculateScroll();
+						_.each(magicasts, function (magicast) {
+							magicast.layout.dirty();
+						});
+					}, 0);
 				});
 				
                 $(window).on("resize", function () {
-                    //relative scroll positions change when resizing so they have to be recalculated
-                    calculateScroll();
                     triggerGlobalEvent("resize");
+                    calculateScroll();					
+					_.each(magicasts, function (magicast) {
+						magicast.layout.dirty();
+					});			
                 });
             }
 
@@ -736,7 +744,7 @@ define(["jquery",
             }
 
             function loadJs(asset, callback) {
-                var uri = Magicaster.resolveAndGetValue(asset);
+                var url = Magicaster.resolveAndGetValue(asset);
                 var script = document.createElement("script");
                 script.type = "text/javascript";
                 if (callback) {
@@ -754,17 +762,17 @@ define(["jquery",
                         };
                     }
                 }
-                script.setAttribute("src", uri);
+                script.setAttribute("src", url);
                 document.getElementsByTagName("head")[0].appendChild(script);
             }
 
             function loadCss(asset) {
-                var uri = Magicaster.resolveAndGetValue(asset);
+                var url = Magicaster.resolveAndGetValue(asset);
                 var i = -1;
                 var sheets = document.getElementsByTagName("link");
                 var sheetLength = sheets.length;
                 var found = false;
-                var re = new RegExp(uri);
+                var re = new RegExp(url);
                 while (++i < sheetLength) {
                     if (re.test(sheets[i].href)) {
                         found = true;
@@ -774,7 +782,7 @@ define(["jquery",
                 if (!found) {
                     var el = document.createElement("link");
                     el.setAttribute("rel", 'stylesheet');
-                    el.setAttribute("href", uri);
+                    el.setAttribute("href", url);
                     document.getElementsByTagName("head")[0].appendChild(el);
                 }
             }
@@ -801,7 +809,7 @@ define(["jquery",
 			}
 			
             function resolveAndGetValue(magicast, layer, params, eventArgs) {
-//				Magicaster.console.log("[Magicaster] resolveAndGetValue", magicast, layer, params, eventArgs);
+				Magicaster.console.log("[Magicaster] resolveAndGetValue", magicast, layer, params, eventArgs);				
 				
 				if (params instanceof Object === true) {
 				
@@ -809,7 +817,7 @@ define(["jquery",
 					var value = params.value;
 				
                     if (type == "constant") {
-                        return $.trim(value);
+                        return $.trim("" + value);
                     }
                     if (type == "source") {
                         return parseSourceName($.trim(value));
@@ -921,9 +929,10 @@ define(["jquery",
 							break;
 						case 'gt':
 							val = 1;
-							cmp = parseFloat(args[0]);
 							_(args).each(function(arg) {
-								if (arg != args[0]) {
+								if (cmp === undefined) {
+									cmp = parseFloat(arg);
+								} else {
 									num = parseFloat(arg);
 									if (num >= cmp) {
 										val = 0;
@@ -934,9 +943,10 @@ define(["jquery",
 							break;
 						case 'lt':
 							val = 1;
-							cmp = parseFloat(args[0]);
 							_(args).each(function(arg) {
-								if (arg != args[0]) {
+								if (cmp === undefined) {
+									cmp = parseFloat(arg);
+								} else {
 									num = parseFloat(arg);
 									if (num <= cmp) {
 										val = 0;
@@ -969,8 +979,11 @@ define(["jquery",
                         var cases = Utils.convertToArray(value, "case");
 						var retVal = undefined;
                         _.each(cases, function(c) {
-							if (retVal === undefined && Magicaster.resolveAndGetValue(magicast, layer, c.condition, eventArgs)) {
-								retVal = Magicaster.resolveAndGetValue(magicast, layer, c.value, eventArgs);
+							if (retVal === undefined) {
+								var b = Magicaster.resolveAndGetValue(magicast, layer, c.condition, eventArgs);
+								if (b !== null && b !== false && b !== 0 && b !== "false") {
+									retVal = Magicaster.resolveAndGetValue(magicast, layer, c.value, eventArgs);
+								}
 							}
 						});
 						return retVal;
