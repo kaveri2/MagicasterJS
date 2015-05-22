@@ -76,6 +76,7 @@ define(["jquery", "utils/utils"], function ($, Utils) {
 				height: 360,
 				videoId: videoId,
 				playerVars: {
+					playsinline: 1,
 					html5: 1,
 					modestbranding: 1,
 					disablekb: disablekb,
